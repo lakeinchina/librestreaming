@@ -9,7 +9,6 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
     TextView tv_speed;
     TextView tv_rtmp;
     Handler mainHander;
-    Surface previewSurface;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -272,22 +270,17 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        previewSurface = new Surface(surface);
-        /**
-         * preview can alos use a surfaceview with previewSurface = surfaceholder.getsuface() in surfaceCreated()
-         */
-        resClient.setPreview(previewSurface);
+        resClient.createPreview(surface, width, height);
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-
+        resClient.updatePreview(width, height);
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        resClient.setPreview(null);
-        previewSurface.release();
+        resClient.destroyPreview();
         return true;
     }
 

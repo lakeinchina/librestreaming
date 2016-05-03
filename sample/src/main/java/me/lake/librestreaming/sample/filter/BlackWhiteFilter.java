@@ -1,7 +1,5 @@
 package me.lake.librestreaming.sample.filter;
 
-import android.util.Log;
-
 import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
 
 /**

@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_NV21TOARGB
 
 #define COLOR_FORMAT_NV21 17
 //rendering
-JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_renderingSurface
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_NativeRender_renderingSurface
 (JNIEnv * env, jobject thiz,jobject javaSurface,jbyteArray pixelsArray,jint w,jint h,jint size) {
 	ANativeWindow* window = ANativeWindow_fromSurface(env, javaSurface);
 	if(window!=NULL)

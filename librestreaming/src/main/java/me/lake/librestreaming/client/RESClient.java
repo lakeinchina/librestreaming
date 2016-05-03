@@ -7,7 +7,6 @@ import android.hardware.Camera;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.view.Surface;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -52,6 +51,7 @@ public class RESClient {
 
     public boolean prepare(RESConfig resConfig) {
         synchronized (SyncOp) {
+            coreParameters.renderingMode = resConfig.getRenderingMode();
             coreParameters.rtmpAddr = resConfig.getRtmpAddr();
             coreParameters.printDetailMsg = resConfig.isPrintDetailMsg();
             coreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
@@ -126,10 +126,19 @@ public class RESClient {
 
     /**
      * call it AFTER {@link #prepare(RESConfig)}
-     * @param surface to rendering preview
+     *
+     * @param surfaceTexture to rendering preview
      */
-    public void setPreview(Surface surface) {
-        resCore.setPreview(surface);
+    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+        resCore.createPreview(surfaceTexture, visualWidth, visualHeight);
+    }
+
+    public void updatePreview(int visualWidth, int visualHeight) {
+        resCore.updatePreview(visualWidth, visualHeight);
+    }
+
+    public void destroyPreview() {
+        resCore.destroyPreview();
     }
 
     /**

@@ -2,6 +2,7 @@ package me.lake.librestreaming.core;
 
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -10,7 +11,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -25,6 +25,9 @@ import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
 import me.lake.librestreaming.model.RESAudioBuff;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.RESVideoBuff;
+import me.lake.librestreaming.render.GLESRender;
+import me.lake.librestreaming.render.IRender;
+import me.lake.librestreaming.render.NativeRender;
 import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.BuffSizeCalculator;
@@ -66,23 +69,24 @@ public class RESCore {
     private VideoSenderThread videoSenderThread;
     private AudioSenderThread audioSenderThread;
 
+    //render
+    private final Object syncPreview = new Object();
+    private IRender previewRender;
+
     //STATE
     private enum STATE {
         IDLE,
         PREPARED,
         RUNING,
         STOPPED;
+
     }
 
     private STATE runState;
-
     //filter
     private Lock lockVideoFilter = null;
-    private BaseVideoFilter videoFilter;
 
-    //preview
-    final private Object syncPreview = new Object();
-    private Surface previewSurface;
+    private BaseVideoFilter videoFilter;
 
     private long startTimeMs;
 
@@ -168,13 +172,46 @@ public class RESCore {
         lockVideoFilter.unlock();
     }
 
-    public void setPreview(Surface surface) {
-        if (surface != null) {
-            synchronized (syncPreview) {
-                previewSurface = surface;
+    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+        synchronized (syncPreview) {
+            if (previewRender != null) {
+                throw new RuntimeException("createPreview without destroy previous");
             }
-        } else {
-            LogTools.e("!!PreviewSurfaceHolder is null");
+            switch (resCoreParameters.renderingMode) {
+                case RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
+                    previewRender = new NativeRender();
+                    break;
+                case RESCoreParameters.RENDERING_MODE_OPENGLES:
+                    previewRender = new GLESRender();
+                    break;
+                default:
+                    throw new RuntimeException("Unknow rendering mode");
+            }
+            previewRender.create(surfaceTexture,
+                    resCoreParameters.previewColorFormat,
+                    resCoreParameters.videoWidth,
+                    resCoreParameters.videoHeight,
+                    visualWidth,
+                    visualHeight);
+        }
+    }
+
+    public void updatePreview(int visualWidth, int visualHeight) {
+        synchronized (syncPreview) {
+            if (previewRender == null) {
+                throw new RuntimeException("updatePreview without createPreview");
+            }
+            previewRender.update(visualWidth, visualHeight);
+        }
+    }
+
+    public void destroyPreview() {
+        synchronized (syncPreview) {
+            if (previewRender == null) {
+                throw new RuntimeException("destroyPreview without createPreview");
+            }
+            previewRender.destroy();
+            previewRender = null;
         }
     }
 
@@ -434,14 +471,10 @@ public class RESCore {
          */
         private void rendering(byte[] pixel) {
             synchronized (syncPreview) {
-                if (previewSurface == null) {
+                if (previewRender == null) {
                     return;
                 }
-                ColorHelper.renderingSurface(previewSurface,
-                        pixel,
-                        resCoreParameters.videoWidth,
-                        resCoreParameters.videoHeight,
-                        pixel.length);
+                previewRender.rendering(pixel);
             }
         }
 

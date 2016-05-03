@@ -8,8 +8,12 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-3-16.
  */
 public class RESCoreParameters {
+    public static final int RENDERING_MODE_NATIVE_WINDOW = 1;
+    public static final int RENDERING_MODE_OPENGLES = 2;
+
     public boolean done;
     public boolean printDetailMsg;
+    public int renderingMode;
     public String rtmpAddr;
     public int videoWidth;
     public int videoHeight;

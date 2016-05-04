@@ -37,6 +37,9 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-3-16.
  */
 public class RESCore {
+    static {
+        System.loadLibrary("restreaming");
+    }
     private RESCoreParameters resCoreParameters;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;

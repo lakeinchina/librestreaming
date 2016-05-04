@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         final RESConfig resConfig = RESConfig.obtain();
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1000);
+        resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setRtmpAddr("rtmp://****");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {

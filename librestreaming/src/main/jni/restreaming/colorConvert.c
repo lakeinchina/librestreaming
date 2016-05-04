@@ -94,3 +94,27 @@ void NV21TOARGB(const unsigned char *src,const unsigned int *dst,int width,int h
 		}
 	}
 }
+void NV21TOYUV(const unsigned char *src,const unsigned char *dstY,const unsigned char *dstU,const unsigned char *dstV,int width,int height)
+{
+	int ySize=width*height;
+	int uvSize=ySize>>1;
+	int uSize = uvSize>>1;
+	//y
+	memcpy(dstY,src,ySize);
+	//uv
+	unsigned char *srcucur = src+ySize+1;
+	unsigned char *srcvcur = src+ySize;
+	unsigned char *dstucur = dstU;
+	unsigned char *dstvcur = dstV;
+	int i=0;
+	while(i<uSize)
+	{
+		(*dstucur)=(*srcucur);
+		(*dstvcur)=(*srcvcur);
+		srcucur+=2;
+		srcvcur+=2;
+		++dstucur;
+		++dstvcur;
+		++i;
+	}
+}

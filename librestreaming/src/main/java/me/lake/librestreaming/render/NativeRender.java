@@ -10,9 +10,6 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-5-3.
  */
 public class NativeRender implements IRender {
-    static {
-        System.loadLibrary("restreaming");
-    }
     Surface mVisualSurface;
     int mPixelWidth;
     int mPixelHeight;

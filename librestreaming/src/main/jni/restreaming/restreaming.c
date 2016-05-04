@@ -72,3 +72,17 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_NativeRender_rendering
 	}
 	return;
 }
+
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_GLESRender_NV21TOYUV
+(JNIEnv *env, jobject thiz,jbyteArray srcarray,jbyteArray dstYarray,jbyteArray dstUarray,jbyteArray dstVarray,jint width,jint height){
+		unsigned char *src = (unsigned char*)(*env)->GetByteArrayElements(env,srcarray, 0);
+		unsigned char *dsty = (unsigned char*)(*env)->GetByteArrayElements(env,dstYarray, 0);
+		unsigned char *dstu = (unsigned char*)(*env)->GetByteArrayElements(env,dstUarray, 0);
+		unsigned char *dstv = (unsigned char*)(*env)->GetByteArrayElements(env,dstVarray, 0);
+		NV21TOYUV(src,dsty,dstu,dstv,width,height);
+		(*env)->ReleaseByteArrayElements(env,srcarray,src,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstYarray,dsty,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstUarray,dstu,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstVarray,dstv,JNI_ABORT);
+		return;
+}

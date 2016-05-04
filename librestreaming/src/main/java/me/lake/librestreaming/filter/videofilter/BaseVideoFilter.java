@@ -27,7 +27,7 @@ public class BaseVideoFilter {
      * @param targetBuff
      * @param presentationTimeMs
      * @param sequenceNum
-     * @return true to use orignBuff,false to use targetBuff
+     * @return false to use orignBuff,true to use targetBuff
      */
     public boolean onFrame(byte[] orignBuff, byte[] targetBuff, long presentationTimeMs, int sequenceNum) {
         return false;

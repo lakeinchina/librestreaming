@@ -358,7 +358,7 @@ public class GLESRender implements IRender {
                         "uniform sampler2D samplerY;\n" +
                         "uniform sampler2D samplerU;\n" +
                         "uniform sampler2D samplerV;\n" +
-                        "const mat3 yuv2rgb = mat3(1,1,1,0,-0.39465,2.03211,1.13983,-0.5806,0);\n" +
+                        "const mediump mat3 yuv2rgb = mat3(1,1,1,0,-0.39465,2.03211,1.13983,-0.5806,0);\n" +
                         "void main(){\n" +
                         "    mediump vec3 yuv;\n" +
                         "    yuv.x = texture2D(samplerY,vTextureCoord).r;\n" +

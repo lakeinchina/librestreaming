@@ -43,7 +43,7 @@ public class RESClient {
 
     public RESClient() {
         cameraNum = Camera.getNumberOfCameras();
-        currentCameraIndex = 0;
+        currentCameraIndex = Camera.CameraInfo.CAMERA_FACING_BACK;
         SyncOp = new Object();
         coreParameters = new RESCoreParameters();
         CallbackDelivery.i();
@@ -51,6 +51,10 @@ public class RESClient {
 
     public boolean prepare(RESConfig resConfig) {
         synchronized (SyncOp) {
+            checkDirection(resConfig);
+            if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
+                currentCameraIndex = resConfig.getDefaultCamera();
+            }
             coreParameters.renderingMode = resConfig.getRenderingMode();
             coreParameters.rtmpAddr = resConfig.getRtmpAddr();
             coreParameters.printDetailMsg = resConfig.isPrintDetailMsg();
@@ -73,7 +77,12 @@ public class RESClient {
                     srcColorTypes.add(colortype);
                 }
             }
+            if (coreParameters.isPortrait) {
+                coreParameters.videoHeight = coreParameters.previewVideoWidth;
+                coreParameters.videoWidth = coreParameters.previewVideoHeight;
+            }
             resCore = new RESCore();
+            resCore.setCurrentCamera(currentCameraIndex);
             if (!resCore.config(coreParameters, srcColorTypes)) {
                 LogTools.e("resCore.config,failed");
                 coreParameters.dump();
@@ -151,6 +160,7 @@ public class RESClient {
             camera.stopPreview();
             camera.release();
             camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum);
+            resCore.setCurrentCamera(currentCameraIndex);
             CameraHelper.configCamera(camera, coreParameters);
             prepareVideo();
             startVideo();
@@ -371,4 +381,45 @@ public class RESClient {
         }
     }
 
+    private void checkDirection(RESConfig resConfig) {
+        int frontFlag = resConfig.getFrontCameraDirectionMode();
+        int backFlag = resConfig.getBackCameraDirectionMode();
+        int fbit = 0;
+        int bbit = 0;
+        for (int i = 4; i <= 8; ++i) {
+            if (((frontFlag >> i) & 0x1) == 1) {
+                fbit++;
+            }
+            if (((backFlag >> i) & 0x1) == 1) {
+                bbit++;
+            }
+        }
+        if (fbit != 1 || bbit != 1) {
+            throw new RuntimeException("invalid direction rotation flag:frontFlagNum=" + frontFlag + ",backFlagNum=" + backFlag);
+        }
+        if (((frontFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_0) != 0) || ((frontFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_180) != 0)) {
+            fbit = 0;
+        } else {
+            fbit = 1;
+        }
+        if (((backFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_0) != 0) || ((backFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_180) != 0)) {
+            bbit = 0;
+        } else {
+            bbit = 1;
+        }
+        if (bbit != fbit) {
+            if (bbit == 0) {
+                throw new RuntimeException("invalid direction rotation flag:back camera is landscape but front camera is portrait");
+            } else {
+                throw new RuntimeException("invalid direction rotation flag:back camera is portrait but front camera is landscape");
+            }
+        }
+        if (fbit == 1) {
+            coreParameters.isPortrait = true;
+        } else {
+            coreParameters.isPortrait = false;
+        }
+        coreParameters.backCameraDirectionMode = backFlag;
+        coreParameters.frontCameraDirectionMode = frontFlag;
+    }
 }

@@ -72,8 +72,8 @@ public class CameraHelper {
         });
         for (Camera.Size size : previewsSizes) {
             if (size.width >= targetSize.getWidth() && size.height >= targetSize.getHeight()) {
-                coreParameters.videoWidth = size.width;
-                coreParameters.videoHeight = size.height;
+                coreParameters.previewVideoWidth = size.width;
+                coreParameters.previewVideoHeight = size.height;
                 return;
             }
         }

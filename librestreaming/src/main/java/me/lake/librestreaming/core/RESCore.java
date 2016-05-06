@@ -3,6 +3,7 @@ package me.lake.librestreaming.core;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -40,6 +41,9 @@ public class RESCore {
     static {
         System.loadLibrary("restreaming");
     }
+
+    private int currentCamera;
+
     private RESCoreParameters resCoreParameters;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
@@ -104,6 +108,10 @@ public class RESCore {
         videoFilter = null;
     }
 
+    public void setCurrentCamera(int camIndex) {
+        currentCamera = camIndex;
+    }
+
 
     public void queueVideo(byte[] rawVideoFrame) {
         if (runState != STATE.RUNING) {
@@ -112,7 +120,7 @@ public class RESCore {
         int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
         if (orignVideoBuffs[targetIndex].isReadyToFill) {
             LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
-            System.arraycopy(rawVideoFrame, 0, orignVideoBuffs[targetIndex].buff, 0, resCoreParameters.previewBufferSize);
+            acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
             orignVideoBuffs[targetIndex].isReadyToFill = false;
             lastVideoQueueBuffIndex = targetIndex;
             videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
@@ -135,6 +143,15 @@ public class RESCore {
         } else {
             LogTools.d("queueAudio,abandon,targetIndex" + targetIndex);
         }
+    }
+
+    private void acceptVideo(byte[] src, byte[] dst) {
+        int directionFlag = currentCamera == Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
+        ColorHelper.NV21Transform(src,
+                dst,
+                resCoreParameters.previewVideoWidth,
+                resCoreParameters.previewVideoHeight,
+                directionFlag);
     }
 
     /**

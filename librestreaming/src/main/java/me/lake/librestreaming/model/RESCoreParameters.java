@@ -10,11 +10,25 @@ import me.lake.librestreaming.tools.LogTools;
 public class RESCoreParameters {
     public static final int RENDERING_MODE_NATIVE_WINDOW = 1;
     public static final int RENDERING_MODE_OPENGLES = 2;
+    /**
+     * same with jni
+     */
+    public static final int FLAG_DIRECTION_FLIP_HORIZONTAL = 0x01;
+    public static final int FLAG_DIRECTION_FLIP_VERTICAL = 0x02;
+    public static final int FLAG_DIRECTION_ROATATION_0 = 0x10;
+    public static final int FLAG_DIRECTION_ROATATION_90 = 0x20;
+    public static final int FLAG_DIRECTION_ROATATION_180 = 0x40;
+    public static final int FLAG_DIRECTION_ROATATION_270 = 0x80;
 
     public boolean done;
     public boolean printDetailMsg;
     public int renderingMode;
     public String rtmpAddr;
+    public int frontCameraDirectionMode;
+    public int backCameraDirectionMode;
+    public boolean isPortrait;
+    public int previewVideoWidth;
+    public int previewVideoHeight;
     public int videoWidth;
     public int videoHeight;
     public int previewColorFormat;

@@ -3,6 +3,7 @@ package me.lake.librestreaming.sample;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -70,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1000);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
+        resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
+        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90
+                | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
         resConfig.setRtmpAddr("rtmp://****");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {

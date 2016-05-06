@@ -43,7 +43,30 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_NV21TOARGB
 		return;
 }
 
-#define COLOR_FORMAT_NV21 17
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_NV21Transform
+(JNIEnv * env, jobject thiz, jbyteArray srcarray,jbyteArray dstarray,jint dstwidth,jint dstheight,jint directionflag) {
+	unsigned char *src = (unsigned char*)(*env)->GetByteArrayElements(env,srcarray, 0);
+	unsigned char *dst = (unsigned char*)(*env)->GetByteArrayElements(env,dstarray, 0);
+	NV21Transform(src,dst,dstwidth,dstheight,directionflag);
+	(*env)->ReleaseByteArrayElements(env,srcarray,src,JNI_ABORT);
+	(*env)->ReleaseByteArrayElements(env,dstarray,dst,JNI_ABORT);
+	return;
+}
+
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_GLESRender_NV21TOYUV
+(JNIEnv *env, jobject thiz,jbyteArray srcarray,jbyteArray dstYarray,jbyteArray dstUarray,jbyteArray dstVarray,jint width,jint height){
+		unsigned char *src = (unsigned char*)(*env)->GetByteArrayElements(env,srcarray, 0);
+		unsigned char *dsty = (unsigned char*)(*env)->GetByteArrayElements(env,dstYarray, 0);
+		unsigned char *dstu = (unsigned char*)(*env)->GetByteArrayElements(env,dstUarray, 0);
+		unsigned char *dstv = (unsigned char*)(*env)->GetByteArrayElements(env,dstVarray, 0);
+		NV21TOYUV(src,dsty,dstu,dstv,width,height);
+		(*env)->ReleaseByteArrayElements(env,srcarray,src,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstYarray,dsty,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstUarray,dstu,JNI_ABORT);
+		(*env)->ReleaseByteArrayElements(env,dstVarray,dstv,JNI_ABORT);
+		return;
+}
+
 //rendering
 JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_NativeRender_renderingSurface
 (JNIEnv * env, jobject thiz,jobject javaSurface,jbyteArray pixelsArray,jint w,jint h,jint size) {
@@ -71,18 +94,4 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_NativeRender_rendering
 		ANativeWindow_release(window);
 	}
 	return;
-}
-
-JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_GLESRender_NV21TOYUV
-(JNIEnv *env, jobject thiz,jbyteArray srcarray,jbyteArray dstYarray,jbyteArray dstUarray,jbyteArray dstVarray,jint width,jint height){
-		unsigned char *src = (unsigned char*)(*env)->GetByteArrayElements(env,srcarray, 0);
-		unsigned char *dsty = (unsigned char*)(*env)->GetByteArrayElements(env,dstYarray, 0);
-		unsigned char *dstu = (unsigned char*)(*env)->GetByteArrayElements(env,dstUarray, 0);
-		unsigned char *dstv = (unsigned char*)(*env)->GetByteArrayElements(env,dstVarray, 0);
-		NV21TOYUV(src,dsty,dstu,dstv,width,height);
-		(*env)->ReleaseByteArrayElements(env,srcarray,src,JNI_ABORT);
-		(*env)->ReleaseByteArrayElements(env,dstYarray,dsty,JNI_ABORT);
-		(*env)->ReleaseByteArrayElements(env,dstUarray,dstu,JNI_ABORT);
-		(*env)->ReleaseByteArrayElements(env,dstVarray,dstv,JNI_ABORT);
-		return;
 }

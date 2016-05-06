@@ -14,4 +14,5 @@ public class ColorHelper {
 
     static public native void NV21TOARGB(byte[] src, int[] dst, int width,int height);
 
+    static public native void NV21Transform(byte[] src, byte[] dst, int dstwidth,int dstheight,int directionFlag);
 }

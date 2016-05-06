@@ -94,6 +94,33 @@ void NV21TOARGB(const unsigned char *src,const unsigned int *dst,int width,int h
 		}
 	}
 }
+#define IS_FLIP_H ((FLAG_DIRECTION_FLIP_HORIZONTAL&directionFlag)!=0)
+#define IS_FLIP_V ((FLAG_DIRECTION_FLIP_VERTICAL&directionFlag)!=0)
+void NV21Transform(const unsigned char *src,const unsigned char *dst,int dstWidth,int dstHeight,int directionFlag)
+{
+	int rotate=0;
+	int hflip=0;
+	int vflip=0;
+	if((FLAG_DIRECTION_ROATATION_0&directionFlag)!=0 || (FLAG_DIRECTION_ROATATION_180&directionFlag)!=0){
+		rotate =0;
+	}else{
+		rotate =1;
+	}
+
+	if((FLAG_DIRECTION_ROATATION_0&directionFlag)!=0 || (FLAG_DIRECTION_ROATATION_90&directionFlag)!=0){
+		hflip = IS_FLIP_H?1:0;
+		vflip = IS_FLIP_V?1:0;
+	}else{
+		rotate =0;
+		if(IS_FLIP_V){
+			hflip = IS_FLIP_H?0:1;
+			vflip = IS_FLIP_H?0:0;
+		}else{
+			hflip = IS_FLIP_H?0:1;
+			vflip = IS_FLIP_H?1:1;
+		}
+	}
+}
 void NV21TOYUV(const unsigned char *src,const unsigned char *dstY,const unsigned char *dstU,const unsigned char *dstV,int width,int height)
 {
 	int ySize=width*height;

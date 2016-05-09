@@ -28,7 +28,7 @@ public class CameraHelper {
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_FIXED);
             }
         }
-        parameters.setPreviewSize(coreParameters.videoWidth, coreParameters.videoHeight);
+        parameters.setPreviewSize(coreParameters.previewVideoWidth, coreParameters.previewVideoHeight);
         parameters.setPreviewFpsRange(coreParameters.previewMinFps, coreParameters.previewMaxFps);
         try {
             camera.setParameters(parameters);

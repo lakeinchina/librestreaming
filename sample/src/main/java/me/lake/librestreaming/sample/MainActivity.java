@@ -72,10 +72,10 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         resConfig.setBitRate(1000 * 1000);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
-        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90
-                | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
-        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
-        resConfig.setRtmpAddr("rtmp://****");
+        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
+        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90|RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+//        resConfig.setRtmpAddr("rtmp://****");
+        resConfig.setRtmpAddr("rtmp://upload.rtmp.kukuplay.com/live/a26c42");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {
             Log.e("aa", "prepare,failed!!");

@@ -44,10 +44,10 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_NV21TOARGB
 }
 
 JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_NV21Transform
-(JNIEnv * env, jobject thiz, jbyteArray srcarray,jbyteArray dstarray,jint dstwidth,jint dstheight,jint directionflag) {
+(JNIEnv * env, jobject thiz, jbyteArray srcarray,jbyteArray dstarray,jint srcwidth,jint srcheight,jint directionflag) {
 	unsigned char *src = (unsigned char*)(*env)->GetByteArrayElements(env,srcarray, 0);
 	unsigned char *dst = (unsigned char*)(*env)->GetByteArrayElements(env,dstarray, 0);
-	NV21Transform(src,dst,dstwidth,dstheight,directionflag);
+	NV21Transform(src,dst,srcwidth,srcheight,directionflag);
 	(*env)->ReleaseByteArrayElements(env,srcarray,src,JNI_ABORT);
 	(*env)->ReleaseByteArrayElements(env,dstarray,dst,JNI_ABORT);
 	return;

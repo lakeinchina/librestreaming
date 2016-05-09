@@ -1,5 +1,6 @@
 #include "colorConvert.h"
 #include <string.h>
+#include "log.h"
 
 void NV21TOYUV420SP(const unsigned char *src,const unsigned char *dst,int ySize)
 {
@@ -96,8 +97,10 @@ void NV21TOARGB(const unsigned char *src,const unsigned int *dst,int width,int h
 }
 #define IS_FLIP_H ((FLAG_DIRECTION_FLIP_HORIZONTAL&directionFlag)!=0)
 #define IS_FLIP_V ((FLAG_DIRECTION_FLIP_VERTICAL&directionFlag)!=0)
-void NV21Transform(const unsigned char *src,const unsigned char *dst,int dstWidth,int dstHeight,int directionFlag)
+void NV21Transform(const unsigned char *src,const unsigned char *dst,int srcWidth,int srcHeight,int directionFlag)
 {
+	unsigned char *cdst=dst;
+	unsigned char *csrc=src;
 	int rotate=0;
 	int hflip=0;
 	int vflip=0;
@@ -111,7 +114,6 @@ void NV21Transform(const unsigned char *src,const unsigned char *dst,int dstWidt
 		hflip = IS_FLIP_H?1:0;
 		vflip = IS_FLIP_V?1:0;
 	}else{
-		rotate =0;
 		if(IS_FLIP_V){
 			hflip = IS_FLIP_H?0:1;
 			vflip = IS_FLIP_H?0:0;
@@ -120,6 +122,104 @@ void NV21Transform(const unsigned char *src,const unsigned char *dst,int dstWidt
 			vflip = IS_FLIP_H?1:1;
 		}
 	}
+	int ySize=srcHeight*srcWidth;
+	int totalSize = ySize*3 / 2;
+	int yStart,yStep,xStep;
+	if(rotate==0 && hflip==0 && vflip==0){
+		memcpy(cdst,csrc,totalSize);
+		return;
+	}
+	int srcX,srcY,srcCurr;
+	int dstX,dstY,dstCurr;
+	int halfHeight=srcHeight>>1,halfWidth=srcWidth>>1;
+	if(rotate==1){
+		//transformY
+		if(hflip==1){
+			yStart=vflip==1?ySize-srcHeight:ySize-1;
+			yStep=vflip==1?1:-1;
+			xStep=-srcHeight;
+		}else{
+			yStart=vflip==1?0:srcHeight-1;
+			yStep=vflip==1?1:-1;
+			xStep=srcHeight;
+		}
+		srcCurr=-1;
+		for(srcY=0;srcY<srcHeight;++srcY){
+			dstCurr = yStart;
+			for(srcX=0;srcX<srcWidth;++srcX){
+				cdst[dstCurr]=csrc[++srcCurr];
+				dstCurr+=xStep;
+			}
+			yStart+=yStep;
+		}
+		//transformVU
+		if(hflip==1){
+			yStart=vflip==1?totalSize-srcHeight:totalSize-2;
+			yStep=vflip==1?2:-2;
+			xStep=-srcHeight;
+		}else{
+			yStart=vflip==1?ySize:ySize+srcHeight-2;
+			yStep=vflip==1?2:-2;
+			xStep=srcHeight;
+		}
+		srcCurr=ySize-1;
+		for(srcY=0;srcY<halfHeight;++srcY){
+			dstCurr = yStart;
+			for(srcX=0;srcX<halfWidth;++srcX){
+				cdst[dstCurr]=csrc[++srcCurr];
+				cdst[dstCurr+1]=csrc[++srcCurr];
+				dstCurr+=xStep;
+			}
+			yStart+=yStep;
+		}
+	}else{
+		if(vflip==1 && hflip==0){
+			//transformY
+			yStart = ySize-srcWidth;
+			srcCurr=-1;
+			for(srcY=0;srcY<srcHeight;++srcY){
+				dstCurr = yStart-1;
+				for(srcX=0;srcX<srcWidth;++srcX){
+					cdst[++dstCurr]=csrc[++srcCurr];
+				}
+				yStart-=srcWidth;
+			}
+			//transformVU
+			yStart=totalSize-srcWidth;
+			for(srcY=0;srcY<halfHeight;++srcY){
+				dstCurr = yStart-1;
+				for(srcX=0;srcX<halfWidth;++srcX){
+					cdst[++dstCurr]=csrc[++srcCurr];
+					cdst[++dstCurr]=csrc[++srcCurr];
+				}
+				yStart-=srcWidth;
+			}
+		}else{
+			yStep=vflip==1?-srcWidth:srcWidth;
+			yStart=vflip==1?ySize-1:srcWidth-1;
+			//transformY
+			srcCurr=-1;
+			for(srcY=0;srcY<srcHeight;++srcY){
+				dstCurr = yStart+1;
+				for(srcX=0;srcX<srcWidth;++srcX){
+					cdst[--dstCurr]=csrc[++srcCurr];
+				}
+				yStart+=yStep;
+			}
+			//transformVU
+			yStart=vflip==1?totalSize-1:ySize+srcWidth-1;
+			for(srcY=0;srcY<halfHeight;++srcY){
+				dstCurr = yStart;
+				for(srcX=0;srcX<halfWidth;++srcX){
+					cdst[dstCurr-1]=csrc[++srcCurr];
+					cdst[dstCurr]=csrc[++srcCurr];
+					dstCurr-=2;
+				}
+				yStart+=yStep;
+			}
+		}
+	}
+
 }
 void NV21TOYUV(const unsigned char *src,const unsigned char *dstY,const unsigned char *dstU,const unsigned char *dstV,int width,int height)
 {

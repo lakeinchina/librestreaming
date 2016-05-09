@@ -80,6 +80,9 @@ public class RESClient {
             if (coreParameters.isPortrait) {
                 coreParameters.videoHeight = coreParameters.previewVideoWidth;
                 coreParameters.videoWidth = coreParameters.previewVideoHeight;
+            } else {
+                coreParameters.videoWidth = coreParameters.previewVideoWidth;
+                coreParameters.videoHeight = coreParameters.previewVideoHeight;
             }
             resCore = new RESCore();
             resCore.setCurrentCamera(currentCameraIndex);
@@ -386,6 +389,12 @@ public class RESClient {
         int backFlag = resConfig.getBackCameraDirectionMode();
         int fbit = 0;
         int bbit = 0;
+        if ((frontFlag >> 4) == 0) {
+            frontFlag |= RESCoreParameters.FLAG_DIRECTION_ROATATION_0;
+        }
+        if ((backFlag >> 4) == 0) {
+            backFlag |= RESCoreParameters.FLAG_DIRECTION_ROATATION_0;
+        }
         for (int i = 4; i <= 8; ++i) {
             if (((frontFlag >> i) & 0x1) == 1) {
                 fbit++;
@@ -395,7 +404,7 @@ public class RESClient {
             }
         }
         if (fbit != 1 || bbit != 1) {
-            throw new RuntimeException("invalid direction rotation flag:frontFlagNum=" + frontFlag + ",backFlagNum=" + backFlag);
+            throw new RuntimeException("invalid direction rotation flag:frontFlagNum=" + fbit + ",backFlagNum=" + bbit);
         }
         if (((frontFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_0) != 0) || ((frontFlag & RESCoreParameters.FLAG_DIRECTION_ROATATION_180) != 0)) {
             fbit = 0;

@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -147,11 +148,13 @@ public class RESCore {
 
     private void acceptVideo(byte[] src, byte[] dst) {
         int directionFlag = currentCamera == Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
+        long a=System.currentTimeMillis();
         ColorHelper.NV21Transform(src,
                 dst,
                 resCoreParameters.previewVideoWidth,
                 resCoreParameters.previewVideoHeight,
                 directionFlag);
+        Log.e("aa","ttime="+(System.currentTimeMillis()-a));
     }
 
     /**

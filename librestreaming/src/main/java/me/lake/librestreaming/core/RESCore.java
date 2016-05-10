@@ -647,7 +647,7 @@ public class RESCore {
             Packager.FLVPackager.fillFlvVideoTag(finalBuff,
                     0,
                     true,
-                    false,
+                    true,
                     AVCDecoderConfigurationRecord.length);
             System.arraycopy(AVCDecoderConfigurationRecord, 0,
                     finalBuff, Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH, AVCDecoderConfigurationRecord.length);

@@ -39,7 +39,7 @@ uchar __attribute__((kernel)) blur(uchar in,uint32_t x)
     uint32_t offset;
     int tmp;
 
-    for (j = 1 - numrad; j < numrad; j++)
+    for (j = 1 - numrad; j < numrad; j+=2)
     {
         rowsum  = 0;
         rowfact = 0;
@@ -47,7 +47,7 @@ uchar __attribute__((kernel)) blur(uchar in,uint32_t x)
             continue;
 
         offset = (yy + j)*width+xx;
-        for (i = 1 - numrad; i < numrad; i++)
+        for (i = 1 - numrad; i < numrad; i+=2)
         {
             if (xx + i < 0 || xx + i >= width)
                 continue;

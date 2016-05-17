@@ -20,36 +20,36 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0px"
-            android:layout_weight="3"
-            android:orientation="horizontal"
+            android:layout_weight="6"
+            android:orientation="vertical"
             android:paddingBottom="5dp">
 
             <Button
                 android:id="@+id/btn_toggle"
-                android:layout_width="0px"
-                android:layout_height="match_parent"
+                android:layout_height="0px"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Start" />
 
             <Button
                 android:id="@+id/btn_swap"
-                android:layout_width="0px"
-                android:layout_height="match_parent"
+                android:layout_height="0px"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Swap" />
             <Button
                 android:id="@+id/btn_flash"
-                android:layout_width="0px"
-                android:layout_height="match_parent"
+                android:layout_height="0px"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Flash" />
             <Button
                 android:id="@+id/btn_screenshot"
-                android:layout_width="0px"
-                android:layout_height="match_parent"
+                android:layout_height="0px"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Screenshot" />

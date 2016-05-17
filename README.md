@@ -27,6 +27,9 @@ sample中有一些使用Java,NDK和RenderScript的滤镜示例
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1000);
         resConfig.setRtmpAddr("rtmp://****");
+        resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
         if (!resClient.prepare(resConfig)) {
             Log.e("Main", "prepare,failed!!");
         }

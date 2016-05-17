@@ -1,5 +1,6 @@
 package me.lake.librestreaming.sample;
 
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -43,7 +45,7 @@ import me.lake.librestreaming.sample.filter.GrayFilter;
 import me.lake.librestreaming.sample.filter.IconFilter;
 import me.lake.librestreaming.sample.filter.SkinBlurFilter;
 
-public class MainActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener {
+public class MainActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener {
     RESClient resClient;
     TextureView txv_preview;
     ListView lv_filter;
@@ -53,9 +55,12 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
     TextView tv_speed;
     TextView tv_rtmp;
     Handler mainHander;
+    Button btn_toggle;
+    boolean started;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        started = false;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         txv_preview = (TextureView) findViewById(R.id.txv_preview);
@@ -69,65 +74,24 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         resClient = new RESClient();
         final RESConfig resConfig = RESConfig.obtain();
         resConfig.setTargetVideoSize(new Size(720, 480));
-        resConfig.setBitRate(1000 * 1000);
+        resConfig.setBitRate(1000 * 1024);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
-        resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
-//        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
-//        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90|RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+        if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+            resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
+        }
         resConfig.setRtmpAddr("rtmp://10.57.8.233/live/livestream");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {
             Log.e("aa", "prepare,failed!!");
         }
         resClient.setConnectionListener(this);
-        findViewById(R.id.btn_start).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resClient.start();
-            }
-        });
-        findViewById(R.id.btn_stop).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resClient.stop();
-            }
-        });
-        findViewById(R.id.btn_swap).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resClient.swapCamera();
-            }
-        });
-        findViewById(R.id.btn_flash).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resClient.toggleFlashLight();
-            }
-        });
-        findViewById(R.id.btn_screenshot).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resClient.takeScreenShot(new RESScreenShotListener() {
-                    @Override
-                    public void onScreenShotResult(Bitmap bitmap) {
-                        File f = new File("/sdcard/" + System.currentTimeMillis() + "_libres.png");
-                        try {
-                            if (!f.exists()) {
-                                f.createNewFile();
-                            }
-                            OutputStream outputStream = new FileOutputStream(f);
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-                            outputStream.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                });
-            }
-        });
+        btn_toggle = (Button) findViewById(R.id.btn_toggle);
+        btn_toggle.setOnClickListener(this);
+        findViewById(R.id.btn_swap).setOnClickListener(this);
+        findViewById(R.id.btn_flash).setOnClickListener(this);
+        findViewById(R.id.btn_screenshot).setOnClickListener(this);
         /**
          * filters just for demo
          */
@@ -242,6 +206,9 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
 
     @Override
     protected void onDestroy() {
+        if (started) {
+            resClient.stop();
+        }
         resClient.destroy();
         super.onDestroy();
         mainHander.removeCallbacksAndMessages(null);
@@ -292,6 +259,49 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_toggle:
+                if (!started) {
+                    btn_toggle.setText("stop");
+                    resClient.start();
+                } else {
+                    btn_toggle.setText("start");
+                    resClient.stop();
+                }
+                started = !started;
+                break;
+            case R.id.btn_swap:
+                resClient.swapCamera();
+                break;
+            case R.id.btn_flash:
+                resClient.toggleFlashLight();
+                break;
+            case R.id.btn_screenshot:
+                resClient.takeScreenShot(new RESScreenShotListener() {
+                    @Override
+                    public void onScreenShotResult(Bitmap bitmap) {
+                        File f = new File("/sdcard/" + System.currentTimeMillis() + "_libres.png");
+                        try {
+                            if (!f.exists()) {
+                                f.createNewFile();
+                            }
+                            OutputStream outputStream = new FileOutputStream(f);
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+                            outputStream.close();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                });
+                break;
+        }
     }
 
     class FilterItem {

@@ -157,16 +157,20 @@ public class RESClient {
      * change camera on running.
      * call it AFTER {@link #start()} & BEFORE {@link #stop()}
      */
-    public void swapCamera() {
+    public boolean swapCamera() {
         synchronized (SyncOp) {
             LogTools.d("RESClient,swapCamera()");
             camera.stopPreview();
             camera.release();
-            camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum);
+            if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
+                LogTools.e("can not swap camera");
+                return false;
+            }
             resCore.setCurrentCamera(currentCameraIndex);
             CameraHelper.configCamera(camera, coreParameters);
             prepareVideo();
             startVideo();
+            return true;
         }
     }
 
@@ -299,12 +303,21 @@ public class RESClient {
      * =====================PRIVATE=================
      **/
     private Camera createCamera(int cameraId) {
-        camera = Camera.open(cameraId);
+        try {
+            camera = Camera.open(cameraId);
+        } catch (SecurityException e) {
+            LogTools.trace("no permission", e);
+            return null;
+        } catch (Exception e) {
+            LogTools.trace("camera.open()failed", e);
+            return null;
+        }
         try {
             videoTexture = new SurfaceTexture(10);
             camera.setPreviewTexture(videoTexture);
         } catch (IOException e) {
             LogTools.trace(e);
+            camera.release();
             return null;
         }
         return camera;

@@ -33,6 +33,7 @@ public class CameraHelper {
         try {
             camera.setParameters(parameters);
         } catch (Exception e) {
+            camera.release();
             return false;
         }
         return true;

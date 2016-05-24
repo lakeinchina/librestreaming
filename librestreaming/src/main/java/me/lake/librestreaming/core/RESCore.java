@@ -261,6 +261,8 @@ public class RESCore {
         dstAudioFormat = new MediaFormat();
         dstAudioEncoder = MediaCodecHelper.createAudioMediaCodec(coreParameters, dstAudioFormat);
         if (dstAudioEncoder == null) {
+            dstVideoEncoder.release();
+            dstVideoEncoder=null;
             LogTools.e("create Audio MediaCodec failed");
             return false;
         }

@@ -21,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -46,6 +47,7 @@ import me.lake.librestreaming.sample.filter.IconFilter;
 import me.lake.librestreaming.sample.filter.SkinBlurFilter;
 
 public class MainActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener {
+    private static final String TAG = "RES";
     RESClient resClient;
     TextureView txv_preview;
     ListView lv_filter;
@@ -84,7 +86,11 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         resConfig.setRtmpAddr("rtmp://10.57.8.233/live/livestream");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {
-            Log.e("aa", "prepare,failed!!");
+            resClient = null;
+            Log.e(TAG, "prepare,failed!!");
+            Toast.makeText(this, "RESClient prepare failed", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
         resClient.setConnectionListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);
@@ -209,9 +215,13 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
         if (started) {
             resClient.stop();
         }
-        resClient.destroy();
+        if (resClient != null) {
+            resClient.destroy();
+        }
+        if (mainHander != null) {
+            mainHander.removeCallbacksAndMessages(null);
+        }
         super.onDestroy();
-        mainHander.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -242,17 +252,23 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        resClient.createPreview(surface, width, height);
+        if (resClient != null) {
+            resClient.createPreview(surface, width, height);
+        }
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        resClient.updatePreview(width, height);
+        if (resClient != null) {
+            resClient.updatePreview(width, height);
+        }
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        resClient.destroyPreview();
+        if (resClient != null) {
+            resClient.destroyPreview();
+        }
         return true;
     }
 

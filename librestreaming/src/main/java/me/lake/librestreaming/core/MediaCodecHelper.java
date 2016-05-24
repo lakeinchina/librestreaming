@@ -1,12 +1,10 @@
 package me.lake.librestreaming.core;
 
-import android.graphics.ImageFormat;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 
 import java.io.IOException;
-import java.util.List;
 
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.tools.LogTools;
@@ -15,7 +13,7 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-3-16.
  */
 public class MediaCodecHelper {
-    public static MediaCodec createVideoMediaCodec(RESCoreParameters coreParameters, List<Integer> srcColorTypes, MediaFormat videoFormat) {
+    public static MediaCodec createVideoMediaCodec(RESCoreParameters coreParameters, MediaFormat videoFormat) {
         videoFormat.setString(MediaFormat.KEY_MIME, "video/avc");
         videoFormat.setInteger(MediaFormat.KEY_WIDTH, coreParameters.videoWidth);
         videoFormat.setInteger(MediaFormat.KEY_HEIGHT, coreParameters.videoHeight);
@@ -29,14 +27,6 @@ public class MediaCodecHelper {
             result = MediaCodec.createEncoderByType(videoFormat.getString(MediaFormat.KEY_MIME));
             int[] colorful = result.getCodecInfo().getCapabilitiesForType(videoFormat.getString(MediaFormat.KEY_MIME)).colorFormats;
             int dstVideoColorFormat = -1;
-            //select preview colorformat
-            if (srcColorTypes.contains(coreParameters.previewColorFormat = ImageFormat.NV21)) {
-                coreParameters.previewColorFormat = ImageFormat.NV21;
-            } else if ((srcColorTypes.contains(coreParameters.previewColorFormat = ImageFormat.YV12))) {
-                coreParameters.previewColorFormat = ImageFormat.YV12;
-            } else {
-                LogTools.e("!!!!!!!!!!!UnSupport,previewColorFormat");
-            }
             //select mediacodec colorformat
             if (isArrayContain(colorful, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar)) {
                 dstVideoColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar;

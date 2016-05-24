@@ -7,6 +7,11 @@ import android.hardware.Camera;
  * Created by lake on 16-3-16.
  */
 public class RESConfig {
+    public static class FilterMode {
+        public static final int HARD = RESCoreParameters.FILTER_MODE_HARD;
+        public static final int SOFT = RESCoreParameters.FILTER_MODE_SOFT;
+    }
+
     public static class RenderingMode {
         public static final int NativeWindow = RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW;
         public static final int OpenGLES = RESCoreParameters.RENDERING_MODE_OPENGLES;
@@ -21,6 +26,7 @@ public class RESConfig {
         public static final int FLAG_DIRECTION_ROATATION_270 = RESCoreParameters.FLAG_DIRECTION_ROATATION_270;
     }
 
+    private int filterMode;
     private Size targetVideoSize;
     private int videoBufferQueueNum;
     private int bitRate;
@@ -36,6 +42,7 @@ public class RESConfig {
 
     public static RESConfig obtain() {
         RESConfig res = new RESConfig();
+        res.setFilterMode(FilterMode.SOFT);
         res.setRenderingMode(RenderingMode.NativeWindow);
         res.setTargetVideoSize(new Size(1280, 720));
         res.setVideoBufferQueueNum(5);
@@ -45,6 +52,14 @@ public class RESConfig {
         res.setBackCameraDirectionMode(DirectionMode.FLAG_DIRECTION_ROATATION_0);
         res.setFrontCameraDirectionMode(DirectionMode.FLAG_DIRECTION_ROATATION_0);
         return res;
+    }
+
+    public int getFilterMode() {
+        return filterMode;
+    }
+
+    public void setFilterMode(int filterMode) {
+        this.filterMode = filterMode;
     }
 
     public int getDefaultCamera() {

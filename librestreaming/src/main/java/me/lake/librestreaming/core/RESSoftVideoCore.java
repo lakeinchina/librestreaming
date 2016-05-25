@@ -36,8 +36,7 @@ import me.lake.librestreaming.tools.LogTools;
 /**
  * Created by lake on 16-5-24.
  */
-public class RESSoftVideoCore {
-
+public class RESSoftVideoCore implements RESVideoCore{
     RESCoreParameters resCoreParameters;
     private int currentCamera;
     private RESFlvDataCollecter dataCollecter;
@@ -78,6 +77,7 @@ public class RESSoftVideoCore {
         currentCamera = camIndex;
     }
 
+    @Override
     public boolean prepare(RESConfig resConfig) {
         resCoreParameters.renderingMode = resConfig.getRenderingMode();
         resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
@@ -133,10 +133,10 @@ public class RESSoftVideoCore {
                 resCoreParameters.previewVideoWidth,
                 resCoreParameters.previewVideoHeight,
                 directionFlag);
-        Log.e("aa", "ttime=" + (System.currentTimeMillis() - a));
     }
 
-    public void start(RESFlvDataCollecter flvDataCollecter) {
+    @Override
+    public boolean start(RESFlvDataCollecter flvDataCollecter,SurfaceTexture camTex) {
         try {
             dataCollecter = flvDataCollecter;
             for (RESVideoBuff buff : orignVideoBuffs) {
@@ -154,11 +154,13 @@ public class RESSoftVideoCore {
             videoSenderThread.start();
             videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
         } catch (Exception e) {
-            LogTools.trace("RESSoftVideoClient.start()failed", e);
+            LogTools.trace("RESVideoClient.start()failed", e);
+            return false;
         }
+        return true;
     }
 
-    public void stop() {
+    public boolean stop() {
         dataCollecter = null;
         videoFilterHandler.removeCallbacksAndMessages(null);
         videoFilterHandlerThread.quit();
@@ -168,20 +170,24 @@ public class RESSoftVideoCore {
             videoSenderThread.join();
         } catch (InterruptedException e) {
             LogTools.trace("RESCore", e);
+            return false;
         }
         dstVideoEncoder.stop();
         dstVideoEncoder.release();
         dstVideoEncoder = null;
+        return true;
     }
 
-    public void destroy() {
+    @Override
+    public boolean destroy() {
         lockVideoFilter.lock();
         if (videoFilter != null) {
             videoFilter.onDestroy();
         }
         lockVideoFilter.unlock();
+        return true;
     }
-
+    @Override
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
             if (previewRender != null) {
@@ -205,7 +211,7 @@ public class RESSoftVideoCore {
                     visualHeight);
         }
     }
-
+    @Override
     public void updatePreview(int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
             if (previewRender == null) {
@@ -214,7 +220,7 @@ public class RESSoftVideoCore {
             previewRender.update(visualWidth, visualHeight);
         }
     }
-
+    @Override
     public void destroyPreview() {
         synchronized (syncPreview) {
             if (previewRender == null) {
@@ -262,7 +268,7 @@ public class RESSoftVideoCore {
         }
         lockVideoFilter.unlock();
     }
-
+    @Override
     public void takeScreenShot(RESScreenShotListener listener) {
         synchronized (syncResScreenShotListener) {
             resScreenShotListener = listener;

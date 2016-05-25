@@ -2,12 +2,7 @@ package me.lake.librestreaming.client;
 
 
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 
-import java.util.List;
-
-import me.lake.librestreaming.core.CameraHelper;
-import me.lake.librestreaming.core.RESCore;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
@@ -39,21 +34,12 @@ public class RESClient {
     public boolean prepare(RESConfig resConfig) {
         synchronized (SyncOp) {
             checkDirection(resConfig);
-            coreParameters.filterMode=resConfig.getFilterMode();
+            coreParameters.filterMode = resConfig.getFilterMode();
             coreParameters.rtmpAddr = resConfig.getRtmpAddr();
             coreParameters.printDetailMsg = resConfig.isPrintDetailMsg();
             coreParameters.senderQueueLength = 150;
-            switch (coreParameters.filterMode) {
-                case RESCoreParameters.FILTER_MODE_SOFT:
-                    videoClient = new RESSoftVideoClient(coreParameters);
-                    break;
-                case RESCoreParameters.FILTER_MODE_HARD:
-                    videoClient = new RESHardVideoClient(coreParameters);
-                    break;
-                default:
-                    return false;
-            }
-            audioClient = new RESSoftAudioClient(coreParameters);
+            videoClient = new RESVideoClient(coreParameters);
+            audioClient = new RESAudioClient(coreParameters);
             if (!videoClient.prepare(resConfig)) {
                 LogTools.d("!!!!!videoClient.prepare()failed");
                 LogTools.d(coreParameters.toString());
@@ -263,6 +249,7 @@ public class RESClient {
         coreParameters.backCameraDirectionMode = backFlag;
         coreParameters.frontCameraDirectionMode = frontFlag;
     }
+
     static {
         System.loadLibrary("restreaming");
     }

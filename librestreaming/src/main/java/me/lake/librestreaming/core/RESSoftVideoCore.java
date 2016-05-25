@@ -11,7 +11,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -87,7 +86,7 @@ public class RESSoftVideoCore implements RESVideoCore{
         resCoreParameters.mediacodecAVCFrameRate = 30;
         resCoreParameters.mediacodecAVCIFrameInterval = 5;
         dstVideoFormat = new MediaFormat();
-        dstVideoEncoder = MediaCodecHelper.createVideoMediaCodec(resCoreParameters, dstVideoFormat);
+        dstVideoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
         if (dstVideoEncoder == null) {
             LogTools.e("create Video MediaCodec failed");
             return false;
@@ -161,12 +160,11 @@ public class RESSoftVideoCore implements RESVideoCore{
     }
 
     public boolean stop() {
-        dataCollecter = null;
         videoFilterHandler.removeCallbacksAndMessages(null);
         videoFilterHandlerThread.quit();
+        videoSenderThread.quit();
         try {
             videoFilterHandlerThread.join();
-            videoSenderThread.quit();
             videoSenderThread.join();
         } catch (InterruptedException e) {
             LogTools.trace("RESCore", e);
@@ -175,6 +173,7 @@ public class RESSoftVideoCore implements RESVideoCore{
         dstVideoEncoder.stop();
         dstVideoEncoder.release();
         dstVideoEncoder = null;
+        dataCollecter = null;
         return true;
     }
 

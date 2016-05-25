@@ -21,7 +21,6 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-5-24.
  */
 public class RESVideoClient {
-    public static int OVERWATCH_TEXTURE_ID = 10;
     RESCoreParameters resCoreParameters;
     private Camera camera;
     private SurfaceTexture camTexture;
@@ -39,6 +38,7 @@ public class RESVideoClient {
         if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
             currentCameraIndex = resConfig.getDefaultCamera();
         }
+        camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
         if (null == (camera = createCamera(currentCameraIndex))) {
             LogTools.e("can not open camera");
             return false;
@@ -105,7 +105,6 @@ public class RESVideoClient {
             camera.addCallbackBuffer(new byte[resCoreParameters.previewBufferSize]);
             camera.addCallbackBuffer(new byte[resCoreParameters.previewBufferSize]);
         }
-        camTexture = new SurfaceTexture(OVERWATCH_TEXTURE_ID);
         return true;
     }
 

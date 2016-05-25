@@ -10,6 +10,7 @@ import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
  * Created by lake on 16-5-25.
  */
 public interface RESVideoCore {
+    int OVERWATCH_TEXTURE_ID = 10;
     boolean prepare(RESConfig resConfig);
 
     boolean start(RESFlvDataCollecter flvDataCollecter,SurfaceTexture camTex);

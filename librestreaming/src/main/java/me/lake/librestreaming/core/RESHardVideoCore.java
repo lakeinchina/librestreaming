@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import javax.microedition.khronos.egl.EGL10;
+
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
 import me.lake.librestreaming.model.RESConfig;
@@ -34,16 +36,21 @@ public class RESHardVideoCore implements RESVideoCore {
     private RESFlvDataCollecter dataCollecter;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
+    private final Object syncPreview = new Object();
+    private ScreenParams screenParams;
+    private VideoGLThread videoGLThread;
     //sender
     private VideoSenderThread videoSenderThread;
-    private VideoGLThread videoGLThread;
 
     public RESHardVideoCore(RESCoreParameters parameters) {
         resCoreParameters = parameters;
+        screenParams = new ScreenParams();
     }
 
     public void onFrameAvailable() {
+        Log.e("aa", "ava");
         videoGLThread.wakeup();
+        Log.e("aa", "ava");
     }
 
     @Override
@@ -72,7 +79,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
             }
             dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            videoSenderThread = new VideoSenderThread("VideoSenderThread");
+            videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
             videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface());
             dstVideoEncoder.start();
             videoSenderThread.start();
@@ -82,6 +89,11 @@ public class RESHardVideoCore implements RESVideoCore {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void updateCamTexture(SurfaceTexture camTex) {
+        videoGLThread.updateCamTexture(camTex);
     }
 
     @Override
@@ -104,7 +116,7 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public boolean destroy() {
-        return false;
+        return true;
     }
 
     @Override
@@ -114,17 +126,29 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-
+        synchronized (syncPreview) {
+            if (screenParams.surfaceTexture != null) {
+                throw new RuntimeException("createPreview without destroyPreview");
+            }
+            screenParams.surfaceTexture = surfaceTexture;
+            screenParams.visualWidth = visualWidth;
+            screenParams.visualHeight = visualHeight;
+        }
     }
 
     @Override
     public void updatePreview(int visualWidth, int visualHeight) {
-
+        synchronized (syncPreview) {
+            screenParams.visualWidth = visualWidth;
+            screenParams.visualHeight = visualHeight;
+        }
     }
 
     @Override
     public void destroyPreview() {
-
+        synchronized (syncPreview) {
+            screenParams.surfaceTexture = null;
+        }
     }
 
     @Override
@@ -152,7 +176,13 @@ public class RESHardVideoCore implements RESVideoCore {
         VideoGLThread(SurfaceTexture camTexture, Surface inputSuface) {
             mediaInputSurface = inputSuface;
             cameraTexture = camTexture;
+            screenGLWapper = null;
+            mediaCodecGLWapper = null;
             quit = false;
+        }
+        public void updateCamTexture(SurfaceTexture surfaceTexture)
+        {
+            cameraTexture = surfaceTexture;
         }
 
         public void quit() {
@@ -180,9 +210,12 @@ public class RESHardVideoCore implements RESVideoCore {
             initMediaCodecProgram(mediaCodecGLWapper);
             frameBuffer = fb[0];
             frameBufferTexture = fbt[0];
-            cameraTexture.attachToGLContext(OVERWATCH_TEXTURE_ID);
             while (!quit) {
+                GLHelper.currentMediaCodec(mediaCodecGLWapper);
                 waitCamera();
+                if (quit) {
+                    break;
+                }
                 cameraTexture.updateTexImage();
                 drawFrameBuffer();
                 drawMediaCodec();
@@ -191,7 +224,13 @@ public class RESHardVideoCore implements RESVideoCore {
                     frameNum--;
                 }
             }
-            cameraTexture.detachFromGLContext();
+            GLHelper.currentMediaCodec(mediaCodecGLWapper);
+            synchronized (syncPreview) {
+                if (screenGLWapper != null) {
+                    cleanUpScreen();
+                }
+            }
+            cleanUpMedia();
         }
 
         private void waitCamera() {
@@ -250,7 +289,36 @@ public class RESHardVideoCore implements RESVideoCore {
         }
 
         private void drawScreen() {
-
+            synchronized (syncPreview) {
+                if (screenParams.surfaceTexture == null) {
+                    if (screenGLWapper == null) {
+                        return;
+                    } else {
+                        cleanUpScreen();
+                    }
+                }
+                if (screenGLWapper == null) {
+                    screenGLWapper = new ScreenGLWapper();
+                    GLHelper.initScreenGL(screenGLWapper, mediaCodecGLWapper.eglContext, screenParams.surfaceTexture);
+                    initScreenProgram(screenGLWapper);
+                }
+                GLHelper.currentScreen(screenGLWapper);
+                //drawScreen
+                GLES20.glUseProgram(screenGLWapper.drawProgram);
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameBufferTexture);
+                GLES20.glUniform1i(screenGLWapper.drawTextureLoc, 0);
+                GLHelper.enableVertex(screenGLWapper.drawTextureLoc, screenGLWapper.drawTextureCoordLoc,
+                        shapeVerticesBuffer, mediaCodecTextureVerticesBuffer);
+                GLES20.glViewport(0, 0, screenParams.visualWidth, screenParams.visualHeight);
+                drawFrame();
+                GLHelper.disableVertex(screenGLWapper.drawTextureLoc, screenGLWapper.drawTextureCoordLoc);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+                GLES20.glUseProgram(0);
+                if (!EGL14.eglSwapBuffers(screenGLWapper.eglDisplay, screenGLWapper.eglSurface)) {
+                    throw new RuntimeException("eglSwapBuffers,failed!");
+                }
+            }
         }
 
         private void initBuffer() {
@@ -284,109 +352,31 @@ public class RESHardVideoCore implements RESVideoCore {
             wapper.drawPostionLoc = GLES20.glGetAttribLocation(wapper.drawProgram, "aPosition");
             wapper.drawTextureCoordLoc = GLES20.glGetAttribLocation(wapper.drawProgram, "aTextureCoord");
         }
+
+        private void cleanUpMedia() {
+            GLHelper.currentMediaCodec(mediaCodecGLWapper);
+            GLES20.glDeleteProgram(mediaCodecGLWapper.camProgram);
+            GLES20.glDeleteProgram(mediaCodecGLWapper.drawProgram);
+            GLES20.glDeleteFramebuffers(1, new int[]{frameBuffer}, 0);
+            GLES20.glDeleteTextures(1, new int[]{frameBufferTexture}, 0);
+            EGL14.eglDestroySurface(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface);
+            EGL14.eglDestroyContext(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglContext);
+            EGL14.eglTerminate(mediaCodecGLWapper.eglDisplay);
+            EGL14.eglMakeCurrent(mediaCodecGLWapper.eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+        }
+
+        private void cleanUpScreen() {
+            GLHelper.currentScreen(screenGLWapper);
+            GLES20.glDeleteProgram(screenGLWapper.drawProgram);
+            EGL14.eglDestroySurface(screenGLWapper.eglDisplay, screenGLWapper.eglSurface);
+            EGL14.eglDestroyContext(screenGLWapper.eglDisplay, screenGLWapper.eglContext);
+            EGL14.eglTerminate(screenGLWapper.eglDisplay);
+        }
     }
 
-    private class VideoSenderThread extends Thread {
-        private static final long WAIT_TIME = 10000;//5ms;
-        private MediaCodec.BufferInfo eInfo;
-        private long startTime = 0;
-
-        VideoSenderThread(String name) {
-            super(name);
-            eInfo = new MediaCodec.BufferInfo();
-            startTime = 0;
-        }
-
-        private boolean shouldQuit = false;
-
-        void quit() {
-            shouldQuit = true;
-            this.interrupt();
-        }
-
-        @Override
-        public void run() {
-            while (!shouldQuit) {
-                int eobIndex = dstVideoEncoder.dequeueOutputBuffer(eInfo, WAIT_TIME);
-                switch (eobIndex) {
-                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
-                        break;
-                    case MediaCodec.INFO_TRY_AGAIN_LATER:
-//                        LogTools.d("VideoSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
-                        break;
-                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" +
-                                dstVideoEncoder.getOutputFormat().toString());
-                        sendAVCDecoderConfigurationRecord(0, dstVideoEncoder.getOutputFormat());
-                        break;
-                    default:
-                        LogTools.d("VideoSenderThread,MediaCode,eobIndex=" + eobIndex);
-                        if (startTime == 0) {
-                            startTime = eInfo.presentationTimeUs / 1000;
-                        }
-                        Log.e("aa", "eInfo.presentationTimeUs" + eInfo.presentationTimeUs);
-                        /**
-                         * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
-                         * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG
-                         */
-                        if (eInfo.flags != MediaCodec.BUFFER_FLAG_CODEC_CONFIG && eInfo.size != 0) {
-                            ByteBuffer realData = dstVideoEncoder.getOutputBuffers()[eobIndex];
-                            realData.position(eInfo.offset + 4);
-                            realData.limit(eInfo.offset + eInfo.size);
-                            sendRealData((eInfo.presentationTimeUs / 1000) - startTime, realData);
-                        }
-                        dstVideoEncoder.releaseOutputBuffer(eobIndex, false);
-                        break;
-                }
-            }
-            eInfo = null;
-        }
-
-        private void sendAVCDecoderConfigurationRecord(long tms, MediaFormat format) {
-            byte[] AVCDecoderConfigurationRecord = Packager.H264Packager.generateAVCDecoderConfigurationRecord(format);
-            int packetLen = Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH +
-                    AVCDecoderConfigurationRecord.length;
-            byte[] finalBuff = new byte[packetLen];
-            Packager.FLVPackager.fillFlvVideoTag(finalBuff,
-                    0,
-                    true,
-                    true,
-                    AVCDecoderConfigurationRecord.length);
-            System.arraycopy(AVCDecoderConfigurationRecord, 0,
-                    finalBuff, Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH, AVCDecoderConfigurationRecord.length);
-            RESFlvData resFlvData = new RESFlvData();
-            resFlvData.byteBuffer = finalBuff;
-            resFlvData.size = finalBuff.length;
-            resFlvData.dts = (int) tms;
-            resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
-            resFlvData.videoFrameType = RESFlvData.NALU_TYPE_IDR;
-            dataCollecter.collect(resFlvData, RESRtmpSender.FROM_VIDEO);
-        }
-
-        private void sendRealData(long tms, ByteBuffer realData) {
-            int realDataLength = realData.remaining();
-            int packetLen = Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH +
-                    Packager.FLVPackager.NALU_HEADER_LENGTH +
-                    realDataLength;
-            byte[] finalBuff = new byte[packetLen];
-            realData.get(finalBuff, Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH +
-                            Packager.FLVPackager.NALU_HEADER_LENGTH,
-                    realDataLength);
-            int frameType = finalBuff[Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH +
-                    Packager.FLVPackager.NALU_HEADER_LENGTH] & 0x1F;
-            Packager.FLVPackager.fillFlvVideoTag(finalBuff,
-                    0,
-                    false,
-                    frameType == 5,
-                    realDataLength);
-            RESFlvData resFlvData = new RESFlvData();
-            resFlvData.byteBuffer = finalBuff;
-            resFlvData.size = finalBuff.length;
-            resFlvData.dts = (int) tms;
-            resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
-            resFlvData.videoFrameType = frameType;
-            dataCollecter.collect(resFlvData, RESRtmpSender.FROM_VIDEO);
-        }
+    class ScreenParams {
+        int visualWidth;
+        int visualHeight;
+        SurfaceTexture surfaceTexture;
     }
 }

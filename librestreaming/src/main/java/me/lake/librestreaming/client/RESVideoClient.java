@@ -38,7 +38,6 @@ public class RESVideoClient {
         if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
             currentCameraIndex = resConfig.getDefaultCamera();
         }
-        camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
         if (null == (camera = createCamera(currentCameraIndex))) {
             LogTools.e("can not open camera");
             return false;
@@ -89,14 +88,6 @@ public class RESVideoClient {
             LogTools.trace("camera.open()failed", e);
             return null;
         }
-        try {
-            camera.setPreviewTexture(camTexture);
-            camTexture.detachFromGLContext();
-        } catch (IOException e) {
-            LogTools.trace(e);
-            camera.release();
-            return null;
-        }
         return camera;
     }
 
@@ -122,12 +113,20 @@ public class RESVideoClient {
                 }
             });
         } else {
+            camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
             camTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                     ((RESHardVideoCore) videoCore).onFrameAvailable();
                 }
             });
+            try {
+                camera.setPreviewTexture(camTexture);
+            } catch (IOException e) {
+                LogTools.trace(e);
+                camera.release();
+                return false;
+            }
         }
         camera.startPreview();
         return true;
@@ -136,7 +135,7 @@ public class RESVideoClient {
     public boolean start(RESFlvDataCollecter flvDataCollecter) {
         if (!startVideo()) {
             resCoreParameters.dump();
-            LogTools.e("RESClient,start(),failed");
+            LogTools.e("RESVideoClient,start(),failed");
             return false;
         }
         videoCore.start(flvDataCollecter, camTexture);
@@ -145,6 +144,7 @@ public class RESVideoClient {
 
     public boolean stop() {
         videoCore.stop();
+        camTexture.release();
         camera.stopPreview();
         return true;
     }
@@ -171,6 +171,7 @@ public class RESVideoClient {
         LogTools.d("RESClient,swapCamera()");
         camera.stopPreview();
         camera.release();
+        camTexture.release();
         if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
             LogTools.e("can not swap camera");
             return false;
@@ -179,6 +180,7 @@ public class RESVideoClient {
         CameraHelper.configCamera(camera, resCoreParameters);
         prepareVideo();
         startVideo();
+        videoCore.updateCamTexture(camTexture);
         return true;
     }
 

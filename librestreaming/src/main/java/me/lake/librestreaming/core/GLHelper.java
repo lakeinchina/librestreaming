@@ -60,15 +60,15 @@ public class GLHelper {
             1.0f, 1.0f,
             1.0f, 0.0f};
     private static float MediaCodecTextureVertices[] = {
-            0.0f, 0.0f,
             0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f};
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f};
     private static float ScreenTextureVertices[] = {
-            0.0f, 0.0f,
             0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f};
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f};
     public static int FLOAT_SIZE_BYTES = 4;
     public static int SHORT_SIZE_BYTES = 2;
     public static int COORDS_PER_VERTEX = 2;

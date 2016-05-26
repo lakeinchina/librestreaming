@@ -15,6 +15,8 @@ public interface RESVideoCore {
 
     boolean start(RESFlvDataCollecter flvDataCollecter,SurfaceTexture camTex);
 
+    void updateCamTexture(SurfaceTexture camTex);
+
     boolean stop();
 
     boolean destroy();

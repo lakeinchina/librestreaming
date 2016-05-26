@@ -46,7 +46,7 @@ public class RESAudioClient {
         audioRecord.startRecording();
         audioRecordThread = new AudioRecordThread();
         audioRecordThread.start();
-        LogTools.d("RESClient,start()");
+        LogTools.d("RESAudioClient,start()");
         return true;
     }
 
@@ -81,7 +81,7 @@ public class RESAudioClient {
             return false;
         }
         if (AudioRecord.SUCCESS != audioRecord.setPositionNotificationPeriod(resCoreParameters.audioRecoderSliceSize)) {
-            LogTools.e("AudioRecord.SUCCESS != audioRecord.setPositionNotificationPeriod(resCoreParameters.audioRecoderSliceSize");
+            LogTools.e("AudioRecord.SUCCESS != audioRecord.setPositionNotificationPeriod(" + resCoreParameters.audioRecoderSliceSize + ")");
             return false;
         }
         return true;

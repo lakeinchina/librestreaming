@@ -13,6 +13,7 @@ import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
@@ -22,7 +23,6 @@ import me.lake.librestreaming.model.ScreenGLWapper;
 import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
 import me.lake.librestreaming.rtmp.RESRtmpSender;
-import me.lake.librestreaming.tools.GLESTools;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -30,6 +30,7 @@ import me.lake.librestreaming.tools.LogTools;
  */
 public class RESHardVideoCore implements RESVideoCore {
     RESCoreParameters resCoreParameters;
+    private int currentCamera;
     private RESFlvDataCollecter dataCollecter;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
@@ -42,7 +43,7 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     public void onFrameAvailable() {
-
+        videoGLThread.wakeup();
     }
 
     @Override
@@ -71,10 +72,10 @@ public class RESHardVideoCore implements RESVideoCore {
                 dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
             }
             dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            dstVideoEncoder.start();
             videoSenderThread = new VideoSenderThread("VideoSenderThread");
-            videoSenderThread.start();
             videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface());
+            dstVideoEncoder.start();
+            videoSenderThread.start();
             videoGLThread.start();
         } catch (Exception e) {
             LogTools.trace("RESHardVideoCore,start()failed", e);
@@ -85,8 +86,20 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public boolean stop() {
+        videoGLThread.quit();
+        videoSenderThread.quit();
+        try {
+            videoGLThread.join();
+            videoSenderThread.join();
+        } catch (InterruptedException e) {
+            LogTools.trace("RESHardVideoCore,stop()failed", e);
+            return false;
+        }
+        dstVideoEncoder.stop();
+        dstVideoEncoder.release();
+        dstVideoEncoder = null;
         dataCollecter = null;
-        return false;
+        return true;
     }
 
     @Override
@@ -96,7 +109,7 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public void setCurrentCamera(int cameraIndex) {
-
+        currentCamera = cameraIndex;
     }
 
     @Override
@@ -134,11 +147,26 @@ public class RESHardVideoCore implements RESVideoCore {
         private FloatBuffer mediaCodecTextureVerticesBuffer;
         private FloatBuffer screenTextureVerticesBuffer;
         private FloatBuffer cameraTextureVerticesBuffer;
+        private ShortBuffer drawIndecesBuffer;
 
         VideoGLThread(SurfaceTexture camTexture, Surface inputSuface) {
             mediaInputSurface = inputSuface;
             cameraTexture = camTexture;
             quit = false;
+        }
+
+        public void quit() {
+            synchronized (syncThread) {
+                quit = true;
+                syncThread.notify();
+            }
+        }
+
+        public void wakeup() {
+            synchronized (syncThread) {
+                ++frameNum;
+                syncThread.notify();
+            }
         }
 
         @Override
@@ -147,9 +175,9 @@ public class RESHardVideoCore implements RESVideoCore {
             mediaCodecGLWapper = new MediaCodecGLWapper();
             GLHelper.initMediaCodecGL(mediaCodecGLWapper, mediaInputSurface);
             GLHelper.currentMediaCodec(mediaCodecGLWapper);
-            initMediaCodecProgram(mediaCodecGLWapper);
             int[] fb = new int[1], fbt = new int[1];
             GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            initMediaCodecProgram(mediaCodecGLWapper);
             frameBuffer = fb[0];
             frameBufferTexture = fbt[0];
             cameraTexture.attachToGLContext(OVERWATCH_TEXTURE_ID);
@@ -184,7 +212,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private void drawFrame() {
             GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 4);
+            GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawIndecesBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, drawIndecesBuffer);
         }
 
         private void drawFrameBuffer() {
@@ -230,6 +258,7 @@ public class RESHardVideoCore implements RESVideoCore {
             mediaCodecTextureVerticesBuffer = GLHelper.getMediaCodecTextureVerticesBuffer();
             screenTextureVerticesBuffer = GLHelper.getScreenTextureVerticesBuffer();
             cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer();
+            drawIndecesBuffer = GLHelper.getDrawIndecesBuffer();
         }
 
         private void initMediaCodecProgram(MediaCodecGLWapper wapper) {
@@ -296,6 +325,7 @@ public class RESHardVideoCore implements RESVideoCore {
                         if (startTime == 0) {
                             startTime = eInfo.presentationTimeUs / 1000;
                         }
+                        Log.e("aa", "eInfo.presentationTimeUs" + eInfo.presentationTimeUs);
                         /**
                          * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
                          * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG

@@ -12,6 +12,7 @@ import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import me.lake.librestreaming.model.MediaCodecGLWapper;
 import me.lake.librestreaming.model.ScreenGLWapper;
@@ -47,6 +48,7 @@ public class GLHelper {
             "    vec4  color = texture2D(uTexture, vTextureCoord);\n" +
             "    gl_FragColor = color;\n" +
             "}";
+    private static short drawIndices[] = {0, 1, 2, 0, 2, 3};
     private static float SquareVertices[] = {
             -1.0f, 1.0f,
             -1.0f, -1.0f,
@@ -179,7 +181,9 @@ public class GLHelper {
         GLES20.glGenFramebuffers(1, frameBuffer, 0);
         GLES20.glGenTextures(1, frameBufferTex, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameBufferTex[0]);
+        GLESTools.checkGlError("createCamFrameBuff");
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLESTools.checkGlError("createCamFrameBuff");
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
                 GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
@@ -188,7 +192,9 @@ public class GLHelper {
                 GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
                 GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLESTools.checkGlError("createCamFrameBuff");
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer[0]);
+        GLESTools.checkGlError("createCamFrameBuff");
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, frameBufferTex[0], 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
@@ -223,6 +229,15 @@ public class GLHelper {
 
     public static int createScreenProgram() {
         return GLESTools.createProgram(VERTEXSHADER, FRAGMENTSHADER_2D);
+    }
+
+    public static ShortBuffer getDrawIndecesBuffer() {
+        ShortBuffer result = ByteBuffer.allocateDirect(SHORT_SIZE_BYTES * drawIndices.length).
+                order(ByteOrder.nativeOrder()).
+                asShortBuffer();
+        result.put(drawIndices);
+        result.position(0);
+        return result;
     }
 
     public static FloatBuffer getShapeVerticesBuffer() {

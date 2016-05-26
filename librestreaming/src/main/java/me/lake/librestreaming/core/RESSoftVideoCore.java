@@ -126,7 +126,6 @@ public class RESSoftVideoCore implements RESVideoCore{
 
     private void acceptVideo(byte[] src, byte[] dst) {
         int directionFlag = currentCamera == Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
-        long a = System.currentTimeMillis();
         ColorHelper.NV21Transform(src,
                 dst,
                 resCoreParameters.previewVideoWidth,

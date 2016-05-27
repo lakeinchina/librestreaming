@@ -74,6 +74,7 @@ public class RESRtmpSender {
         private FLvMetaData fLvMetaData;
         private RESConnectionListener connectionListener;
         private final Object syncConnectionListener = new Object();
+        private int errorTime=0;
 
         private enum STATE {
             IDLE,
@@ -146,18 +147,20 @@ public class RESRtmpSender {
                     RESFlvData flvData = (RESFlvData) msg.obj;
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res != 0) {
+                        errorTime=0;
                         if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
                         } else {
                             audioByteSpeedometer.gain(flvData.size);
                         }
                     } else {
+                        ++errorTime;
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
                                 CallbackDelivery.i().post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        connectionListener.onWriteError(0);
+                                        connectionListener.onWriteError(errorTime);
                                     }
                                 });
                             }

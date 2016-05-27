@@ -82,6 +82,9 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
             resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
             resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
+        } else {
+            resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
         }
         resConfig.setRtmpAddr("rtmp://10.57.8.233/live/livestream");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
@@ -234,11 +237,15 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
     }
 
     @Override
-    public void onWriteError(int error) {
+    public void onWriteError(int errorTimes) {
         /**
          * failed to write data,maybe restart.
          */
-        tv_rtmp.setText("writeError=" + error);
+        tv_rtmp.setText("writeError=" + errorTimes);
+        if (errorTimes == 100) {
+            resClient.stop();
+            resClient.start();
+        }
     }
 
     @Override

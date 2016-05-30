@@ -181,7 +181,6 @@ public class RESHardVideoCore implements RESVideoCore {
         //gl stuff
         private Surface mediaInputSurface;
         private SurfaceTexture cameraTexture;
-        private final Object syncCameraTexture = new Object();
         private MediaCodecGLWapper mediaCodecGLWapper;
         private ScreenGLWapper screenGLWapper;
         private int frameBuffer;
@@ -203,6 +202,7 @@ public class RESHardVideoCore implements RESVideoCore {
         public void updateCamTexture(SurfaceTexture surfaceTexture) {
             if (surfaceTexture != cameraTexture) {
                 cameraTexture = surfaceTexture;
+                frameNum=0;
             }
         }
 

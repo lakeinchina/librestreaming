@@ -57,7 +57,6 @@ public class VideoSenderThread extends Thread {
                     if (startTime == 0) {
                         startTime = eInfo.presentationTimeUs / 1000;
                     }
-                    Log.e("aa", "eInfo.presentationTimeUs" + eInfo.presentationTimeUs+";;"+(eInfo.presentationTimeUs/1000-startTime));
                     /**
                      * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
                      * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG

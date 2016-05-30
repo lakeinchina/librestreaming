@@ -62,6 +62,7 @@ public class RESAudioClient {
                 audioRecordThread.join();
             } catch (InterruptedException ignored) {
             }
+            softAudioCore.stop();
             audioRecordThread = null;
             audioRecord.stop();
             return true;

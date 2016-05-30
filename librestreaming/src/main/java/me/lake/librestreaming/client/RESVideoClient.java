@@ -169,8 +169,6 @@ public class RESVideoClient {
         LogTools.d("RESClient,swapCamera()");
         camera.stopPreview();
         camera.release();
-        camTexture.release();
-        videoCore.updateCamTexture(null);
         if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
             LogTools.e("can not swap camera");
             return false;
@@ -178,6 +176,8 @@ public class RESVideoClient {
         videoCore.setCurrentCamera(currentCameraIndex);
         CameraHelper.configCamera(camera, resCoreParameters);
         prepareVideo();
+        camTexture.release();
+        videoCore.updateCamTexture(null);
         startVideo();
         videoCore.updateCamTexture(camTexture);
         return true;

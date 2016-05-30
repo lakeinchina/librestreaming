@@ -11,20 +11,15 @@ import android.opengl.GLES20;
 import android.util.Log;
 import android.view.Surface;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
-
-import javax.microedition.khronos.egl.EGL10;
 
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.ScreenGLWapper;
-import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
-import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -32,11 +27,12 @@ import me.lake.librestreaming.tools.LogTools;
  */
 public class RESHardVideoCore implements RESVideoCore {
     RESCoreParameters resCoreParameters;
+    private final Object syncOp = new Object();
     private int currentCamera;
-    private RESFlvDataCollecter dataCollecter;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
     private final Object syncPreview = new Object();
+    private final Object syncScreenCleanUp = new Object();
     private ScreenParams screenParams;
     private VideoGLThread videoGLThread;
     //sender
@@ -48,75 +44,87 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     public void onFrameAvailable() {
-        Log.e("aa", "ava");
-        videoGLThread.wakeup();
-        Log.e("aa", "ava");
+        if (videoGLThread != null) {
+            videoGLThread.wakeup();
+        }
     }
 
     @Override
     public boolean prepare(RESConfig resConfig) {
-        resCoreParameters.renderingMode = resConfig.getRenderingMode();
-        resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
-        resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-        resCoreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
-        resCoreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-        resCoreParameters.mediacodecAVCFrameRate = 30;
-        resCoreParameters.mediacodecAVCIFrameInterval = 5;
-        dstVideoFormat = new MediaFormat();
-        dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
-        if (dstVideoEncoder == null) {
-            LogTools.e("create Video MediaCodec failed");
-            return false;
+        synchronized (syncOp) {
+            resCoreParameters.renderingMode = resConfig.getRenderingMode();
+            resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
+            resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
+            resCoreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+            resCoreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+            resCoreParameters.mediacodecAVCFrameRate = 30;
+            resCoreParameters.mediacodecAVCIFrameInterval = 5;
+            dstVideoFormat = new MediaFormat();
+            dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
+            if (dstVideoEncoder == null) {
+                LogTools.e("create Video MediaCodec failed");
+                return false;
+            }
+            return true;
         }
-        return true;
     }
 
     @Override
     public boolean start(RESFlvDataCollecter flvDataCollecter, SurfaceTexture camTex) {
-        try {
-            dataCollecter = flvDataCollecter;
-            if (dstVideoEncoder == null) {
-                dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+        synchronized (syncOp) {
+            try {
+                if (dstVideoEncoder == null) {
+                    dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+                }
+                dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
+                videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface());
+                dstVideoEncoder.start();
+                videoSenderThread.start();
+                videoGLThread.start();
+            } catch (Exception e) {
+                LogTools.trace("RESHardVideoCore,start()failed", e);
+                return false;
             }
-            dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
-            videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface());
-            dstVideoEncoder.start();
-            videoSenderThread.start();
-            videoGLThread.start();
-        } catch (Exception e) {
-            LogTools.trace("RESHardVideoCore,start()failed", e);
-            return false;
+            return true;
         }
-        return true;
     }
 
     @Override
     public void updateCamTexture(SurfaceTexture camTex) {
-        videoGLThread.updateCamTexture(camTex);
+        synchronized (syncOp) {
+            if (videoGLThread != null) {
+                videoGLThread.updateCamTexture(camTex);
+            }
+        }
     }
 
     @Override
     public boolean stop() {
-        videoGLThread.quit();
-        videoSenderThread.quit();
-        try {
-            videoGLThread.join();
-            videoSenderThread.join();
-        } catch (InterruptedException e) {
-            LogTools.trace("RESHardVideoCore,stop()failed", e);
-            return false;
+        synchronized (syncOp) {
+            videoGLThread.quit();
+            videoSenderThread.quit();
+            try {
+                videoGLThread.join();
+                videoSenderThread.join();
+            } catch (InterruptedException e) {
+                LogTools.trace("RESHardVideoCore,stop()failed", e);
+                return false;
+            }
+            dstVideoEncoder.stop();
+            dstVideoEncoder.release();
+            videoGLThread = null;
+            videoSenderThread = null;
+            dstVideoEncoder = null;
+            return true;
         }
-        dstVideoEncoder.stop();
-        dstVideoEncoder.release();
-        dstVideoEncoder = null;
-        dataCollecter = null;
-        return true;
     }
 
     @Override
     public boolean destroy() {
-        return true;
+        synchronized (syncOp) {
+            return true;
+        }
     }
 
     @Override
@@ -146,8 +154,18 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public void destroyPreview() {
-        synchronized (syncPreview) {
-            screenParams.surfaceTexture = null;
+        synchronized (syncOp) {
+            if (videoGLThread != null) {
+                synchronized (syncPreview) {
+                    synchronized (syncScreenCleanUp) {
+                        try {
+                            syncScreenCleanUp.wait();
+                            screenParams.surfaceTexture = null;
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -163,6 +181,7 @@ public class RESHardVideoCore implements RESVideoCore {
         //gl stuff
         private Surface mediaInputSurface;
         private SurfaceTexture cameraTexture;
+        private final Object syncCameraTexture = new Object();
         private MediaCodecGLWapper mediaCodecGLWapper;
         private ScreenGLWapper screenGLWapper;
         private int frameBuffer;
@@ -180,9 +199,11 @@ public class RESHardVideoCore implements RESVideoCore {
             mediaCodecGLWapper = null;
             quit = false;
         }
-        public void updateCamTexture(SurfaceTexture surfaceTexture)
-        {
-            cameraTexture = surfaceTexture;
+
+        public void updateCamTexture(SurfaceTexture surfaceTexture) {
+            if (surfaceTexture != cameraTexture) {
+                cameraTexture = surfaceTexture;
+            }
         }
 
         public void quit() {
@@ -216,7 +237,11 @@ public class RESHardVideoCore implements RESVideoCore {
                 if (quit) {
                     break;
                 }
-                cameraTexture.updateTexImage();
+                synchronized (syncThread) {
+                    if (cameraTexture != null) {
+                        cameraTexture.updateTexImage();
+                    }
+                }
                 drawFrameBuffer();
                 drawMediaCodec();
                 drawScreen();
@@ -226,8 +251,12 @@ public class RESHardVideoCore implements RESVideoCore {
             }
             GLHelper.currentMediaCodec(mediaCodecGLWapper);
             synchronized (syncPreview) {
-                if (screenGLWapper != null) {
-                    cleanUpScreen();
+                synchronized (syncScreenCleanUp) {
+                    if (screenGLWapper != null) {
+                        Log.e("aa", "drawscreenha");
+                        cleanUpScreen();
+                    }
+                    syncScreenCleanUp.notify();
                 }
             }
             cleanUpMedia();
@@ -235,9 +264,11 @@ public class RESHardVideoCore implements RESVideoCore {
 
         private void waitCamera() {
             synchronized (syncThread) {
-                while (frameNum >= 2) {
-                    cameraTexture.updateTexImage();
-                    --frameNum;
+                if (cameraTexture != null) {
+                    while (frameNum >= 2) {
+                        cameraTexture.updateTexImage();
+                        --frameNum;
+                    }
                 }
                 if (frameNum == 0) {
                     try {
@@ -290,18 +321,26 @@ public class RESHardVideoCore implements RESVideoCore {
 
         private void drawScreen() {
             synchronized (syncPreview) {
+                Log.e("aa", "drawscreen1");
                 if (screenParams.surfaceTexture == null) {
-                    if (screenGLWapper == null) {
-                        return;
-                    } else {
-                        cleanUpScreen();
+                    synchronized (syncScreenCleanUp) {
+                        if (screenGLWapper == null) {
+                            Log.e("aa", "drawscreen2");
+                            return;
+                        } else {
+                            Log.e("aa", "drawscreen3");
+                            cleanUpScreen();
+                        }
+                        syncScreenCleanUp.notify();
                     }
                 }
                 if (screenGLWapper == null) {
+                    Log.e("aa", "drawscreen4");
                     screenGLWapper = new ScreenGLWapper();
                     GLHelper.initScreenGL(screenGLWapper, mediaCodecGLWapper.eglContext, screenParams.surfaceTexture);
                     initScreenProgram(screenGLWapper);
                 }
+                Log.e("aa", "drawscreen");
                 GLHelper.currentScreen(screenGLWapper);
                 //drawScreen
                 GLES20.glUseProgram(screenGLWapper.drawProgram);
@@ -309,7 +348,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameBufferTexture);
                 GLES20.glUniform1i(screenGLWapper.drawTextureLoc, 0);
                 GLHelper.enableVertex(screenGLWapper.drawTextureLoc, screenGLWapper.drawTextureCoordLoc,
-                        shapeVerticesBuffer, mediaCodecTextureVerticesBuffer);
+                        shapeVerticesBuffer, screenTextureVerticesBuffer);
                 GLES20.glViewport(0, 0, screenParams.visualWidth, screenParams.visualHeight);
                 drawFrame();
                 GLHelper.disableVertex(screenGLWapper.drawTextureLoc, screenGLWapper.drawTextureCoordLoc);

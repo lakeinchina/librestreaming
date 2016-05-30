@@ -15,6 +15,7 @@ import me.lake.librestreaming.tools.LogTools;
  */
 public class RESAudioClient {
     RESCoreParameters resCoreParameters;
+    private final Object syncOp = new Object();
     private AudioRecordThread audioRecordThread;
     private AudioRecord audioRecord;
     private byte[] audioBuffer;
@@ -25,45 +26,53 @@ public class RESAudioClient {
     }
 
     public boolean prepare(RESConfig resConfig) {
-        resCoreParameters.audioBufferQueueNum = 5;
-        softAudioCore = new RESSoftAudioCore(resCoreParameters);
-        if (!softAudioCore.prepare(resConfig)) {
-            LogTools.e("RESAudioClient,prepare");
-            return false;
+        synchronized (syncOp) {
+            resCoreParameters.audioBufferQueueNum = 5;
+            softAudioCore = new RESSoftAudioCore(resCoreParameters);
+            if (!softAudioCore.prepare(resConfig)) {
+                LogTools.e("RESAudioClient,prepare");
+                return false;
+            }
+            resCoreParameters.audioRecoderFormat = AudioFormat.ENCODING_PCM_16BIT;
+            resCoreParameters.audioRecoderChannelConfig = AudioFormat.CHANNEL_IN_MONO;
+            resCoreParameters.audioRecoderSliceSize = resCoreParameters.mediacodecAACSampleRate / 10;
+            resCoreParameters.audioRecoderBufferSize = resCoreParameters.audioRecoderSliceSize * 2;
+            resCoreParameters.audioRecoderSource = MediaRecorder.AudioSource.DEFAULT;
+            resCoreParameters.audioRecoderSampleRate = resCoreParameters.mediacodecAACSampleRate;
+            prepareAudio();
+            return true;
         }
-        resCoreParameters.audioRecoderFormat = AudioFormat.ENCODING_PCM_16BIT;
-        resCoreParameters.audioRecoderChannelConfig = AudioFormat.CHANNEL_IN_MONO;
-        resCoreParameters.audioRecoderSliceSize = resCoreParameters.mediacodecAACSampleRate / 10;
-        resCoreParameters.audioRecoderBufferSize = resCoreParameters.audioRecoderSliceSize * 2;
-        resCoreParameters.audioRecoderSource = MediaRecorder.AudioSource.DEFAULT;
-        resCoreParameters.audioRecoderSampleRate = resCoreParameters.mediacodecAACSampleRate;
-        prepareAudio();
-        return true;
     }
 
     public boolean start(RESFlvDataCollecter flvDataCollecter) {
-        softAudioCore.start(flvDataCollecter);
-        audioRecord.startRecording();
-        audioRecordThread = new AudioRecordThread();
-        audioRecordThread.start();
-        LogTools.d("RESAudioClient,start()");
-        return true;
+        synchronized (syncOp) {
+            softAudioCore.start(flvDataCollecter);
+            audioRecord.startRecording();
+            audioRecordThread = new AudioRecordThread();
+            audioRecordThread.start();
+            LogTools.d("RESAudioClient,start()");
+            return true;
+        }
     }
 
     public boolean stop() {
-        audioRecordThread.quit();
-        try {
-            audioRecordThread.join();
-        } catch (InterruptedException ignored) {
+        synchronized (syncOp) {
+            audioRecordThread.quit();
+            try {
+                audioRecordThread.join();
+            } catch (InterruptedException ignored) {
+            }
+            audioRecordThread = null;
+            audioRecord.stop();
+            return true;
         }
-        audioRecordThread = null;
-        audioRecord.stop();
-        return true;
     }
 
     public boolean destroy() {
-        audioRecord.release();
-        return true;
+        synchronized (syncOp) {
+            audioRecord.release();
+            return true;
+        }
     }
 
     private boolean prepareAudio() {

@@ -84,8 +84,7 @@ public class MainActivity extends AppCompatActivity implements RESConnectionList
             resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
             resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
         }
-        resConfig.setRtmpAddr("rtmp://upload.rtmp.kukuplay.com/live/a26c42");
-//        resConfig.setRtmpAddr("rtmp://10.57.8.233/live/livestream");
+        resConfig.setRtmpAddr("rtmp://10.57.8.120/live/livestream");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {
             resClient = null;

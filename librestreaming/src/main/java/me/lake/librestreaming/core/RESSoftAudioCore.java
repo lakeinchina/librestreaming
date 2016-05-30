@@ -14,9 +14,7 @@ import java.nio.ByteBuffer;
 import me.lake.librestreaming.model.RESAudioBuff;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
-import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
-import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -24,7 +22,6 @@ import me.lake.librestreaming.tools.LogTools;
  */
 public class RESSoftAudioCore {
     RESCoreParameters resCoreParameters;
-    private RESFlvDataCollecter dataCollecter;
     private MediaCodec dstAudioEncoder;
     private MediaFormat dstAudioFormat;
     //AudioBuffs
@@ -81,7 +78,6 @@ public class RESSoftAudioCore {
 
     public void start(RESFlvDataCollecter flvDataCollecter) {
         try {
-            dataCollecter = flvDataCollecter;
             for (RESAudioBuff buff : orignAudioBuffs) {
                 buff.isReadyToFill = true;
             }
@@ -102,7 +98,6 @@ public class RESSoftAudioCore {
     }
 
     public void stop() {
-        dataCollecter = null;
         audioFilterHandler.removeCallbacksAndMessages(null);
         audioFilterHandlerThread.quit();
         try {

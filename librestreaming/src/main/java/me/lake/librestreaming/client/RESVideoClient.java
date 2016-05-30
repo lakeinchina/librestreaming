@@ -100,8 +100,7 @@ public class RESVideoClient {
     }
 
     private boolean startVideo() {
-        //some fucking phone release their callback after stopPreview
-        //so we set it at startVideo
+        camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             camera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
                 @Override
@@ -113,20 +112,19 @@ public class RESVideoClient {
                 }
             });
         } else {
-            camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
             camTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                     ((RESHardVideoCore) videoCore).onFrameAvailable();
                 }
             });
-            try {
-                camera.setPreviewTexture(camTexture);
-            } catch (IOException e) {
-                LogTools.trace(e);
-                camera.release();
-                return false;
-            }
+        }
+        try {
+            camera.setPreviewTexture(camTexture);
+        } catch (IOException e) {
+            LogTools.trace(e);
+            camera.release();
+            return false;
         }
         camera.startPreview();
         return true;
@@ -172,6 +170,7 @@ public class RESVideoClient {
         camera.stopPreview();
         camera.release();
         camTexture.release();
+        videoCore.updateCamTexture(null);
         if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
             LogTools.e("can not swap camera");
             return false;

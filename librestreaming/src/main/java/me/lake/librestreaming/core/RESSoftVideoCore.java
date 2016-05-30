@@ -26,19 +26,29 @@ import me.lake.librestreaming.model.RESVideoBuff;
 import me.lake.librestreaming.render.GLESRender;
 import me.lake.librestreaming.render.IRender;
 import me.lake.librestreaming.render.NativeRender;
-import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
-import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.BuffSizeCalculator;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
  * Created by lake on 16-5-24.
  */
-public class RESSoftVideoCore implements RESVideoCore{
+public class RESSoftVideoCore implements RESVideoCore {
     RESCoreParameters resCoreParameters;
+    private final Object syncOp = new Object();
+    private SurfaceTexture cameraTexture;
+
+    //STATE
+    private enum STATE {
+        IDLE,
+        PREPARED,
+        RUNING,
+        STOPPED,
+        DESTROYED
+    }
+
+    private STATE runState;
     private int currentCamera;
-    private RESFlvDataCollecter dataCollecter;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
     //render
@@ -70,6 +80,7 @@ public class RESSoftVideoCore implements RESVideoCore{
         resCoreParameters = parameters;
         lockVideoFilter = new ReentrantLock(false);
         videoFilter = null;
+        runState = STATE.IDLE;
     }
 
     public void setCurrentCamera(int camIndex) {
@@ -78,48 +89,56 @@ public class RESSoftVideoCore implements RESVideoCore{
 
     @Override
     public boolean prepare(RESConfig resConfig) {
-        resCoreParameters.renderingMode = resConfig.getRenderingMode();
-        resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
-        resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-        resCoreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
-        resCoreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-        resCoreParameters.mediacodecAVCFrameRate = 30;
-        resCoreParameters.mediacodecAVCIFrameInterval = 5;
-        dstVideoFormat = new MediaFormat();
-        dstVideoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
-        if (dstVideoEncoder == null) {
-            LogTools.e("create Video MediaCodec failed");
-            return false;
+        synchronized (syncOp) {
+            resCoreParameters.renderingMode = resConfig.getRenderingMode();
+            resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
+            resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
+            resCoreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+            resCoreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+            resCoreParameters.mediacodecAVCFrameRate = 30;
+            resCoreParameters.mediacodecAVCIFrameInterval = 5;
+            dstVideoFormat = new MediaFormat();
+            dstVideoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
+            if (dstVideoEncoder == null) {
+                LogTools.e("create Video MediaCodec failed");
+                return false;
+            }
+            //video
+            int videoWidth = resCoreParameters.videoWidth;
+            int videoHeight = resCoreParameters.videoHeight;
+            int videoQueueNum = resCoreParameters.videoBufferQueueNum;
+            int orignVideoBuffSize = BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.previewColorFormat);
+            orignVideoBuffs = new RESVideoBuff[videoQueueNum];
+            for (int i = 0; i < videoQueueNum; i++) {
+                orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, orignVideoBuffSize);
+            }
+            resCoreParameters.previewBufferSize = orignVideoBuffSize;
+            orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+                    BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
+            filteredNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+                    BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
+            suitable4VideoEncoderBuff = new RESVideoBuff(resCoreParameters.mediacodecAVCColorFormat,
+                    BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.mediacodecAVCColorFormat));
+            runState = STATE.PREPARED;
+            return true;
         }
-        //video
-        int videoWidth = resCoreParameters.videoWidth;
-        int videoHeight = resCoreParameters.videoHeight;
-        int videoQueueNum = resCoreParameters.videoBufferQueueNum;
-        int orignVideoBuffSize = BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.previewColorFormat);
-        orignVideoBuffs = new RESVideoBuff[videoQueueNum];
-        for (int i = 0; i < videoQueueNum; i++) {
-            orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, orignVideoBuffSize);
-        }
-        resCoreParameters.previewBufferSize = orignVideoBuffSize;
-        orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-                BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
-        filteredNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-                BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
-        suitable4VideoEncoderBuff = new RESVideoBuff(resCoreParameters.mediacodecAVCColorFormat,
-                BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.mediacodecAVCColorFormat));
-        return true;
     }
 
     public void queueVideo(byte[] rawVideoFrame) {
-        int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
-        if (orignVideoBuffs[targetIndex].isReadyToFill) {
-            LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
-            acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
-            orignVideoBuffs[targetIndex].isReadyToFill = false;
-            lastVideoQueueBuffIndex = targetIndex;
-            videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
-        } else {
-            LogTools.d("queueVideo,abandon,targetIndex" + targetIndex);
+        synchronized (syncOp) {
+            if (runState != STATE.RUNING) {
+                return;
+            }
+            int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
+            if (orignVideoBuffs[targetIndex].isReadyToFill) {
+                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+                acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
+                orignVideoBuffs[targetIndex].isReadyToFill = false;
+                lastVideoQueueBuffIndex = targetIndex;
+                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
+            } else {
+                LogTools.d("queueVideo,abandon,targetIndex" + targetIndex);
+            }
         }
     }
 
@@ -134,62 +153,81 @@ public class RESSoftVideoCore implements RESVideoCore{
     }
 
     @Override
-    public boolean start(RESFlvDataCollecter flvDataCollecter,SurfaceTexture camTex) {
-        try {
-            dataCollecter = flvDataCollecter;
-            for (RESVideoBuff buff : orignVideoBuffs) {
-                buff.isReadyToFill = true;
+    public boolean start(RESFlvDataCollecter flvDataCollecter, SurfaceTexture camTex) {
+        synchronized (syncOp) {
+            if (runState != STATE.STOPPED && runState != STATE.PREPARED) {
+                throw new IllegalStateException("start restreaming without prepared or destroyed");
             }
-            if (dstVideoEncoder == null) {
-                dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+            try {
+                for (RESVideoBuff buff : orignVideoBuffs) {
+                    buff.isReadyToFill = true;
+                }
+                if (dstVideoEncoder == null) {
+                    dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+                }
+                dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                dstVideoEncoder.start();
+                lastVideoQueueBuffIndex = 0;
+                videoFilterHandlerThread = new HandlerThread("videoFilterHandlerThread");
+                videoFilterHandlerThread.start();
+                videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
+                videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
+                videoSenderThread.start();
+            } catch (Exception e) {
+                LogTools.trace("RESVideoClient.start()failed", e);
+                return false;
             }
-            dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            dstVideoEncoder.start();
-            lastVideoQueueBuffIndex = 0;
-            videoFilterHandlerThread = new HandlerThread("videoFilterHandlerThread");
-            videoSenderThread = new VideoSenderThread("VideoSenderThread",dstVideoEncoder,flvDataCollecter);
-            videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
-            videoFilterHandlerThread.start();
-            videoSenderThread.start();
-        } catch (Exception e) {
-            LogTools.trace("RESVideoClient.start()failed", e);
-            return false;
+            runState = STATE.RUNING;
+            return true;
         }
-        return true;
     }
 
     @Override
     public void updateCamTexture(SurfaceTexture camTex) {
-
     }
 
     public boolean stop() {
-        videoFilterHandler.removeCallbacksAndMessages(null);
-        videoFilterHandlerThread.quit();
-        videoSenderThread.quit();
-        try {
-            videoFilterHandlerThread.join();
-            videoSenderThread.join();
-        } catch (InterruptedException e) {
-            LogTools.trace("RESCore", e);
-            return false;
+        synchronized (syncOp) {
+            if (runState != STATE.RUNING) {
+                throw new IllegalStateException("stop restreaming without start or destroyed");
+            }
+            videoFilterHandler.removeCallbacksAndMessages(null);
+            videoFilterHandlerThread.quit();
+            videoSenderThread.quit();
+            try {
+                videoFilterHandlerThread.join();
+                videoSenderThread.join();
+            } catch (InterruptedException e) {
+                LogTools.trace("RESCore", e);
+                return false;
+            }
+            dstVideoEncoder.stop();
+            dstVideoEncoder.release();
+            dstVideoEncoder = null;
+            videoSenderThread = null;
+            videoFilterHandlerThread = null;
+            videoFilterHandler = null;
+            runState = STATE.STOPPED;
+            return true;
         }
-        dstVideoEncoder.stop();
-        dstVideoEncoder.release();
-        dstVideoEncoder = null;
-        dataCollecter = null;
-        return true;
     }
 
     @Override
     public boolean destroy() {
-        lockVideoFilter.lock();
-        if (videoFilter != null) {
-            videoFilter.onDestroy();
+        synchronized (syncOp) {
+            if (runState != STATE.STOPPED && runState != STATE.PREPARED) {
+                throw new IllegalStateException("destroy restreaming without stop");
+            }
+            lockVideoFilter.lock();
+            if (videoFilter != null) {
+                videoFilter.onDestroy();
+            }
+            lockVideoFilter.unlock();
+            runState = STATE.DESTROYED;
+            return true;
         }
-        lockVideoFilter.unlock();
-        return true;
     }
+
     @Override
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
@@ -214,6 +252,7 @@ public class RESSoftVideoCore implements RESVideoCore{
                     visualHeight);
         }
     }
+
     @Override
     public void updatePreview(int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
@@ -223,6 +262,7 @@ public class RESSoftVideoCore implements RESVideoCore{
             previewRender.update(visualWidth, visualHeight);
         }
     }
+
     @Override
     public void destroyPreview() {
         synchronized (syncPreview) {
@@ -271,6 +311,7 @@ public class RESSoftVideoCore implements RESVideoCore{
         }
         lockVideoFilter.unlock();
     }
+
     @Override
     public void takeScreenShot(RESScreenShotListener listener) {
         synchronized (syncResScreenShotListener) {

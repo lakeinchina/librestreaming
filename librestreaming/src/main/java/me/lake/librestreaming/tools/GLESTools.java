@@ -1,10 +1,7 @@
 package me.lake.librestreaming.tools;
 
-import android.content.Context;
 import android.content.res.Resources;
-import android.opengl.EGL14;
 import android.opengl.GLES20;
-import android.opengl.GLUtils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

@@ -15,7 +15,7 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lakeinchina on 26/05/16.
  */
 public class VideoSenderThread extends Thread {
-    private static final long WAIT_TIME = 10000;//5ms;
+    private static final long WAIT_TIME = 10000;
     private MediaCodec.BufferInfo eInfo;
     private long startTime = 0;
     private MediaCodec dstVideoEncoder;
@@ -57,7 +57,7 @@ public class VideoSenderThread extends Thread {
                     if (startTime == 0) {
                         startTime = eInfo.presentationTimeUs / 1000;
                     }
-                    Log.e("aa", "eInfo.presentationTimeUs" + eInfo.presentationTimeUs);
+                    Log.e("aa", "eInfo.presentationTimeUs" + eInfo.presentationTimeUs+";;"+(eInfo.presentationTimeUs/1000-startTime));
                     /**
                      * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
                      * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG

@@ -1,4 +1,4 @@
-package me.lake.librestreaming.sample.filter;
+package me.lake.librestreaming.sample.softfilter;
 
 import android.content.Context;
 import android.support.v8.renderscript.Allocation;

@@ -217,16 +217,22 @@ public class RESVideoClient {
     }
 
     public BaseVideoFilter acquireVideoFilter() {
-//        return videoCore.acquireVideoFilter();
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            return ((RESSoftVideoCore) videoCore).acquireVideoFilter();
+        }
         return null;
     }
 
     public void releaseVideoFilter() {
-//        videoCore.releaseVideoFilter();
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            ((RESSoftVideoCore) videoCore).releaseVideoFilter();
+        }
     }
 
     public void setVideoFilter(BaseVideoFilter baseVideoFilter) {
-//        videoCore.setVideoFilter(baseVideoFilter);
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            ((RESSoftVideoCore) videoCore).setVideoFilter(baseVideoFilter);
+        }
     }
 
     public void takeScreenShot(RESScreenShotListener listener) {

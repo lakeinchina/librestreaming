@@ -1,6 +1,7 @@
 package me.lake.librestreaming.model;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import me.lake.librestreaming.tools.LogTools;
 
@@ -92,8 +93,12 @@ public class RESCoreParameters {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("ResParameter:");
         Field[] fields = this.getClass().getDeclaredFields();
         for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
             field.setAccessible(true);
             try {
                 sb.append(field.getName());

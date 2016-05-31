@@ -1,4 +1,4 @@
-package me.lake.librestreaming.sample.filter;
+package me.lake.librestreaming.sample.softfilter;
 
 import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
 

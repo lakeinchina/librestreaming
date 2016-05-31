@@ -11,7 +11,8 @@ import me.lake.librestreaming.core.RESHardVideoCore;
 import me.lake.librestreaming.core.RESSoftVideoCore;
 import me.lake.librestreaming.core.RESVideoCore;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
@@ -216,22 +217,40 @@ public class RESVideoClient {
         return true;
     }
 
-    public BaseVideoFilter acquireVideoFilter() {
+    public BaseSoftVideoFilter acquireSoftVideoFilter() {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             return ((RESSoftVideoCore) videoCore).acquireVideoFilter();
         }
         return null;
     }
 
-    public void releaseVideoFilter() {
+    public void releaseSoftVideoFilter() {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             ((RESSoftVideoCore) videoCore).releaseVideoFilter();
         }
     }
 
-    public void setVideoFilter(BaseVideoFilter baseVideoFilter) {
+    public void setSoftVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
-            ((RESSoftVideoCore) videoCore).setVideoFilter(baseVideoFilter);
+            ((RESSoftVideoCore) videoCore).setVideoFilter(baseSoftVideoFilter);
+        }
+    }
+    public BaseHardVideoFilter acquireHardVideoFilter() {
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_HARD) {
+            return ((RESHardVideoCore) videoCore).acquireVideoFilter();
+        }
+        return null;
+    }
+
+    public void releaseHardVideoFilter() {
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_HARD) {
+            ((RESHardVideoCore) videoCore).releaseVideoFilter();
+        }
+    }
+
+    public void setHardVideoFilter(BaseHardVideoFilter baseHardVideoFilter) {
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_HARD) {
+            ((RESHardVideoCore) videoCore).setVideoFilter(baseHardVideoFilter);
         }
     }
 

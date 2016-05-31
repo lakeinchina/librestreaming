@@ -7,12 +7,12 @@ import android.support.v8.renderscript.RenderScript;
 import android.support.v8.renderscript.ScriptIntrinsicBlur;
 import android.support.v8.renderscript.Type;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 
 /**
  * Created by lake on 16-4-12.
  */
-public class BlurFilter extends BaseVideoFilter {
+public class BlurFilterSoft extends BaseSoftVideoFilter {
     ScriptIntrinsicBlur intrinsicBlur;
     RenderScript mRS;
     Allocation mInAllocation;
@@ -20,7 +20,7 @@ public class BlurFilter extends BaseVideoFilter {
     int radius;
     byte[] i, o;
 
-    public BlurFilter(Context context) {
+    public BlurFilterSoft(Context context) {
         mRS = RenderScript.create(context);
         intrinsicBlur = ScriptIntrinsicBlur.create(mRS, Element.U8(mRS));
         radius = 25;

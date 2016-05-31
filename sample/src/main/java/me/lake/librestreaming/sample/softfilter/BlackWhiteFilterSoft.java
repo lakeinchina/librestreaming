@@ -1,14 +1,14 @@
 package me.lake.librestreaming.sample.softfilter;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 
 /**
  * Created by lake on 16-4-1.
  */
-public class BlackWhiteFilter extends BaseVideoFilter {
+public class BlackWhiteFilterSoft extends BaseSoftVideoFilter {
     private byte gap;
 
-    public BlackWhiteFilter(byte gap) {
+    public BlackWhiteFilterSoft(byte gap) {
         this.gap = gap;
     }
 

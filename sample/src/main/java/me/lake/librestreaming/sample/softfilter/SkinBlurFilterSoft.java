@@ -6,13 +6,13 @@ import android.support.v8.renderscript.Element;
 import android.support.v8.renderscript.RenderScript;
 import android.support.v8.renderscript.Type;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.sample.ScriptC_skinblur;
 
 /**
  * Created by lake on 16-4-13.
  */
-public class SkinBlurFilter extends BaseVideoFilter {
+public class SkinBlurFilterSoft extends BaseSoftVideoFilter {
     RenderScript mRS;
     ScriptC_skinblur sSkinblur;
     Allocation mInAllocation;
@@ -22,7 +22,7 @@ public class SkinBlurFilter extends BaseVideoFilter {
     int numrad = (int) (radius + 1.0);
     Context context;
 
-    public SkinBlurFilter(Context context) {
+    public SkinBlurFilterSoft(Context context) {
         this.context = context;
 
     }

@@ -13,8 +13,12 @@ import android.view.Surface;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
@@ -29,6 +33,9 @@ public class RESHardVideoCore implements RESVideoCore {
     RESCoreParameters resCoreParameters;
     private final Object syncOp = new Object();
     private int currentCamera;
+    //filter
+    private Lock lockVideoFilter = null;
+    private BaseHardVideoFilter videoFilter;
     private MediaCodec dstVideoEncoder;
     private MediaFormat dstVideoFormat;
     private final Object syncPreview = new Object();
@@ -41,6 +48,7 @@ public class RESHardVideoCore implements RESVideoCore {
     public RESHardVideoCore(RESCoreParameters parameters) {
         resCoreParameters = parameters;
         screenParams = new ScreenParams();
+        lockVideoFilter = new ReentrantLock(false);
     }
 
     public void onFrameAvailable() {
@@ -169,12 +177,28 @@ public class RESHardVideoCore implements RESVideoCore {
         }
     }
 
+    public BaseHardVideoFilter acquireVideoFilter() {
+        lockVideoFilter.lock();
+        return videoFilter;
+    }
+
+    public void releaseVideoFilter() {
+        lockVideoFilter.unlock();
+    }
+
+    public void setVideoFilter(BaseHardVideoFilter baseHardVideoFilter) {
+        lockVideoFilter.lock();
+        videoFilter = baseHardVideoFilter;
+        lockVideoFilter.unlock();
+    }
+
     @Override
     public void takeScreenShot(RESScreenShotListener listener) {
 
     }
 
     private class VideoGLThread extends Thread {
+        public static final int FILTER_LOCK_TOLERATION = 3;//3ms
         private boolean quit;
         private final Object syncThread = new Object();
         private int frameNum = 0;
@@ -190,6 +214,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private FloatBuffer screenTextureVerticesBuffer;
         private FloatBuffer cameraTextureVerticesBuffer;
         private ShortBuffer drawIndecesBuffer;
+        private BaseHardVideoFilter innerVideoFilter = null;
 
         VideoGLThread(SurfaceTexture camTexture, Surface inputSuface) {
             mediaInputSurface = inputSuface;
@@ -202,7 +227,7 @@ public class RESHardVideoCore implements RESVideoCore {
         public void updateCamTexture(SurfaceTexture surfaceTexture) {
             if (surfaceTexture != cameraTexture) {
                 cameraTexture = surfaceTexture;
-                frameNum=0;
+                frameNum = 0;
             }
         }
 
@@ -249,6 +274,12 @@ public class RESHardVideoCore implements RESVideoCore {
                     frameNum--;
                 }
             }
+            lockVideoFilter.lock();
+            if (innerVideoFilter != null) {
+                innerVideoFilter.onDestroy();
+                innerVideoFilter = null;
+            }
+            lockVideoFilter.unlock();
             GLHelper.currentMediaCodec(mediaCodecGLWapper);
             synchronized (syncPreview) {
                 synchronized (syncScreenCleanUp) {
@@ -285,9 +316,8 @@ public class RESHardVideoCore implements RESVideoCore {
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawIndecesBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, drawIndecesBuffer);
         }
 
-        private void drawFrameBuffer() {
+        private void drawOriginFrameBuffer() {
             GLES20.glUseProgram(mediaCodecGLWapper.camProgram);
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, OVERWATCH_TEXTURE_ID);
             GLES20.glUniform1i(mediaCodecGLWapper.camTextureLoc, 0);
@@ -297,9 +327,33 @@ public class RESHardVideoCore implements RESVideoCore {
             drawFrame();
             GLES20.glFinish();
             GLHelper.disableVertex(mediaCodecGLWapper.camPostionLoc, mediaCodecGLWapper.camTextureCoordLoc);
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
             GLES20.glUseProgram(0);
+        }
+
+        private void drawFrameBuffer() {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer);
+            boolean isFilterLocked = lockVideoFilter();
+            if (isFilterLocked) {
+                if (videoFilter != innerVideoFilter) {
+                    if (innerVideoFilter != null) {
+                        innerVideoFilter.onDestroy();
+                    }
+                    innerVideoFilter = videoFilter;
+                    if (innerVideoFilter != null) {
+                        innerVideoFilter.onInit(resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+                    }
+                }
+                if (innerVideoFilter != null) {
+                    innerVideoFilter.onDraw(OVERWATCH_TEXTURE_ID, shapeVerticesBuffer, cameraTextureVerticesBuffer);
+                } else {
+                    drawOriginFrameBuffer();
+                }
+                unlockVideoFilter();
+            } else {
+                drawOriginFrameBuffer();
+            }
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
 
         private void drawMediaCodec() {
@@ -410,6 +464,22 @@ public class RESHardVideoCore implements RESVideoCore {
             EGL14.eglDestroySurface(screenGLWapper.eglDisplay, screenGLWapper.eglSurface);
             EGL14.eglDestroyContext(screenGLWapper.eglDisplay, screenGLWapper.eglContext);
             EGL14.eglTerminate(screenGLWapper.eglDisplay);
+        }
+
+        /**
+         * @return ture if filter locked & filter!=null
+         */
+
+        private boolean lockVideoFilter() {
+            try {
+                return lockVideoFilter.tryLock(FILTER_LOCK_TOLERATION, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                return false;
+            }
+        }
+
+        private void unlockVideoFilter() {
+            lockVideoFilter.unlock();
         }
     }
 

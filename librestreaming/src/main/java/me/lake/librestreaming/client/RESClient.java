@@ -5,7 +5,8 @@ import android.graphics.SurfaceTexture;
 
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.rtmp.RESFlvData;
@@ -122,32 +123,66 @@ public class RESClient {
     }
 
     /**
+     * only for soft filter mode.<br/>
      * use it to update filter property.<br/>
-     * call it with {@link #releaseVideoFilter()}<br/>
+     * call it with {@link #releaseSoftVideoFilter()}<br/>
      * make sure to release it in 3ms
      *
      * @return the videofilter in use
      */
-    public BaseVideoFilter acquireVideoFilter() {
-        return videoClient.acquireVideoFilter();
+    public BaseSoftVideoFilter acquireSoftVideoFilter() {
+        return videoClient.acquireSoftVideoFilter();
     }
 
     /**
-     * call it with {@link #acquireVideoFilter()}
+     * only for soft filter mode.<br/>
+     * call it with {@link #acquireSoftVideoFilter()}
      */
-    public void releaseVideoFilter() {
-        videoClient.releaseVideoFilter();
+    public void releaseSoftVideoFilter() {
+        videoClient.releaseSoftVideoFilter();
     }
 
     /**
+     * only for soft filter mode.<br/>
      * set videofilter.<br/>
      * can be called Repeatedly.<br/>
-     * do NOT call it between {@link #acquireVideoFilter()} & {@link #releaseVideoFilter()}
+     * do NOT call it between {@link #acquireSoftVideoFilter()} & {@link #releaseSoftVideoFilter()}
      *
-     * @param baseVideoFilter videofilter to apply
+     * @param baseSoftVideoFilter videofilter to apply
      */
-    public void setVideoFilter(BaseVideoFilter baseVideoFilter) {
-        videoClient.setVideoFilter(baseVideoFilter);
+    public void setSoftVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
+        videoClient.setSoftVideoFilter(baseSoftVideoFilter);
+    }
+    /**
+     * only for hard filter mode.<br/>
+     * use it to update filter property.<br/>
+     * call it with {@link #releaseHardVideoFilter()}<br/>
+     * make sure to release it in 3ms
+     *
+     * @return the videofilter in use
+     */
+    public BaseHardVideoFilter acquireHardVideoFilter() {
+        return videoClient.acquireHardVideoFilter();
+    }
+
+    /**
+     * only for hard filter mode.<br/>
+     * call it with {@link #acquireHardVideoFilter()}
+     */
+    public void releaseHardVideoFilter() {
+        videoClient.releaseHardVideoFilter();
+    }
+
+    /**
+     * only for hard filter mode.<br/>
+     * set videofilter.<br/>
+     * can be called Repeatedly.<br/>
+     * do NOT call it between {@link #acquireHardVideoFilter()} & {@link #acquireHardVideoFilter()}
+     *
+     * @param baseHardVideoFilter videofilter to apply
+     */
+    public void setHardVideoFilter(BaseHardVideoFilter baseHardVideoFilter) {
+        videoClient.setHardVideoFilter(baseHardVideoFilter);
     }
 
     /**

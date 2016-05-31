@@ -20,6 +20,7 @@ import me.lake.librestreaming.tools.GLESTools;
 
 /**
  * Created by lake on 16-5-25.
+ * for inner use
  */
 public class GLHelper {
     private static final int EGL_RECORDABLE_ANDROID = 0x3142;

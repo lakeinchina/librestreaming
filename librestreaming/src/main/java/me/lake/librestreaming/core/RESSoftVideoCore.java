@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.RESVideoBuff;
@@ -56,8 +56,7 @@ public class RESSoftVideoCore implements RESVideoCore {
     private IRender previewRender;
     //filter
     private Lock lockVideoFilter = null;
-
-    private BaseVideoFilter videoFilter;
+    private BaseSoftVideoFilter videoFilter;
     private VideoFilterHandler videoFilterHandler;
     private HandlerThread videoFilterHandlerThread;
     //sender
@@ -274,38 +273,21 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
     }
 
-    /**
-     * use it to update filter property.<br/>
-     * call it with {@link #releaseVideoFilter()}<br/>
-     * make sure to release it in 3ms
-     *
-     * @return the videofilter in use
-     */
-    public BaseVideoFilter acquireVideoFilter() {
+    public BaseSoftVideoFilter acquireVideoFilter() {
         lockVideoFilter.lock();
         return videoFilter;
     }
 
-    /**
-     * call it with {@link #acquireVideoFilter()}
-     */
     public void releaseVideoFilter() {
         lockVideoFilter.unlock();
     }
 
-    /**
-     * set videofilter.<br/>
-     * can be called Repeatedly.<br/>
-     * do NOT call it between {@link #acquireVideoFilter()} & {@link #releaseVideoFilter()}
-     *
-     * @param baseVideoFilter
-     */
-    public void setVideoFilter(BaseVideoFilter baseVideoFilter) {
+    public void setVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
         lockVideoFilter.lock();
         if (videoFilter != null) {
             videoFilter.onDestroy();
         }
-        videoFilter = baseVideoFilter;
+        videoFilter = baseSoftVideoFilter;
         if (videoFilter != null) {
             videoFilter.onInit(resCoreParameters.videoWidth, resCoreParameters.videoHeight);
         }

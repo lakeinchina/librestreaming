@@ -15,16 +15,16 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
-import me.lake.librestreaming.sample.softfilter.AnimationFilter;
-import me.lake.librestreaming.sample.softfilter.BlackWhiteFilter;
-import me.lake.librestreaming.sample.softfilter.BlurFilter;
-import me.lake.librestreaming.sample.softfilter.DoNothingFilter;
-import me.lake.librestreaming.sample.softfilter.FixYFilter;
-import me.lake.librestreaming.sample.softfilter.GrayFilter;
-import me.lake.librestreaming.sample.softfilter.IconFilter;
-import me.lake.librestreaming.sample.softfilter.SkinBlurFilter;
+import me.lake.librestreaming.sample.softfilter.AnimationFilterSoft;
+import me.lake.librestreaming.sample.softfilter.BlackWhiteFilterSoft;
+import me.lake.librestreaming.sample.softfilter.BlurFilterSoft;
+import me.lake.librestreaming.sample.softfilter.DoNothingFilterSoft;
+import me.lake.librestreaming.sample.softfilter.FixYFilterSoft;
+import me.lake.librestreaming.sample.softfilter.GrayFilterSoft;
+import me.lake.librestreaming.sample.softfilter.IconFilterSoft;
+import me.lake.librestreaming.sample.softfilter.SkinBlurFilterSoft;
 
 /**
  * Created by lake on 16-5-31.
@@ -41,20 +41,20 @@ public class SoftStreamingActivity extends BaseStreamingActivity {
          */
         ArrayList<FilterItem> filterItems = new ArrayList<FilterItem>();
         filterItems.add(new FilterItem("nofilter", null));
-        filterItems.add(new FilterItem("DoNothingFilter", new DoNothingFilter()));
-        filterItems.add(new FilterItem("GrayFilter", new GrayFilter()));
-        filterItems.add(new FilterItem("BlackWhiteFilter", new BlackWhiteFilter((byte) 0x80)));
+        filterItems.add(new FilterItem("DoNothingFilterSoft", new DoNothingFilterSoft()));
+        filterItems.add(new FilterItem("GrayFilterSoft", new GrayFilterSoft()));
+        filterItems.add(new FilterItem("BlackWhiteFilterSoft", new BlackWhiteFilterSoft((byte) 0x80)));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
-        filterItems.add(new FilterItem("IconFilter", new IconFilter(bitmap)));
-        filterItems.add(new FilterItem("BlurFilter", new BlurFilter(this)));
-        filterItems.add(new FilterItem("SkinBlurFilter", new SkinBlurFilter(this)));
-        filterItems.add(new FilterItem("FixYFilter", new FixYFilter((byte) 0)));
+        filterItems.add(new FilterItem("IconFilterSoft", new IconFilterSoft(bitmap)));
+        filterItems.add(new FilterItem("BlurFilterSoft", new BlurFilterSoft(this)));
+        filterItems.add(new FilterItem("SkinBlurFilterSoft", new SkinBlurFilterSoft(this)));
+        filterItems.add(new FilterItem("FixYFilterSoft", new FixYFilterSoft((byte) 0)));
         Bitmap[] ans = new Bitmap[4];
         ans[0] = BitmapFactory.decodeResource(getResources(), R.drawable.animationa);
         ans[1] = BitmapFactory.decodeResource(getResources(), R.drawable.animationb);
         ans[2] = BitmapFactory.decodeResource(getResources(), R.drawable.animationc);
         ans[3] = BitmapFactory.decodeResource(getResources(), R.drawable.animationd);
-        filterItems.add(new FilterItem("AnimationFilter", new AnimationFilter(ans)));
+        filterItems.add(new FilterItem("AnimationFilterSoft", new AnimationFilterSoft(ans)));
         filterAdapter = new FilterAdapter();
         filterAdapter.updateFilters(filterItems);
         lv_filter.setAdapter(filterAdapter);
@@ -63,42 +63,42 @@ public class SoftStreamingActivity extends BaseStreamingActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (filterAdapter.selectItem(position)) {
                     //changeFilter
-                    BaseVideoFilter filter = ((FilterItem) filterAdapter.getItem(position)).filter;
-                    resClient.setVideoFilter(filter);
+                    BaseSoftVideoFilter filter = ((FilterItem) filterAdapter.getItem(position)).filter;
+                    resClient.setSoftVideoFilter(filter);
                 }
             }
         });
         sb_attr.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                BaseVideoFilter filter = resClient.acquireVideoFilter();
+                BaseSoftVideoFilter filter = resClient.acquireSoftVideoFilter();
                 if (filter != null) {
-                    if (filter instanceof BlackWhiteFilter) {
-                        BlackWhiteFilter blackWhiteFilter = (BlackWhiteFilter) filter;
+                    if (filter instanceof BlackWhiteFilterSoft) {
+                        BlackWhiteFilterSoft blackWhiteFilter = (BlackWhiteFilterSoft) filter;
                         blackWhiteFilter.setGap((byte) ((255 * progress) / 100));
                     }
-                    if (filter instanceof IconFilter) {
-                        IconFilter iconFilter = (IconFilter) filter;
+                    if (filter instanceof IconFilterSoft) {
+                        IconFilterSoft iconFilter = (IconFilterSoft) filter;
                         iconFilter.setXPos(progress * 5);
                     }
-                    if (filter instanceof FixYFilter) {
-                        FixYFilter fixYFilter = (FixYFilter) filter;
+                    if (filter instanceof FixYFilterSoft) {
+                        FixYFilterSoft fixYFilter = (FixYFilterSoft) filter;
                         fixYFilter.setY((byte) ((progress / 100.0) * 255));
                     }
-                    if (filter instanceof BlurFilter) {
-                        BlurFilter blurFilter = (BlurFilter) filter;
+                    if (filter instanceof BlurFilterSoft) {
+                        BlurFilterSoft blurFilter = (BlurFilterSoft) filter;
                         blurFilter.setRadius(progress / 4);
                     }
-                    if (filter instanceof SkinBlurFilter) {
-                        SkinBlurFilter skinBlurFilter = (SkinBlurFilter) filter;
+                    if (filter instanceof SkinBlurFilterSoft) {
+                        SkinBlurFilterSoft skinBlurFilter = (SkinBlurFilterSoft) filter;
                         skinBlurFilter.setRadius(progress / 4);
                     }
-                    if (filter instanceof AnimationFilter) {
-                        AnimationFilter animationFilter = (AnimationFilter) filter;
+                    if (filter instanceof AnimationFilterSoft) {
+                        AnimationFilterSoft animationFilter = (AnimationFilterSoft) filter;
                         animationFilter.setXPos(progress * 5);
                     }
                 }
-                resClient.releaseVideoFilter();
+                resClient.releaseSoftVideoFilter();
             }
 
             @Override
@@ -131,9 +131,9 @@ public class SoftStreamingActivity extends BaseStreamingActivity {
 
     class FilterItem {
         String name;
-        BaseVideoFilter filter;
+        BaseSoftVideoFilter filter;
 
-        public FilterItem(String name, BaseVideoFilter filter) {
+        public FilterItem(String name, BaseSoftVideoFilter filter) {
             this.name = name;
             this.filter = filter;
         }

@@ -15,6 +15,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 import me.lake.librestreaming.model.MediaCodecGLWapper;
+import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.ScreenGLWapper;
 import me.lake.librestreaming.tools.GLESTools;
 
@@ -60,6 +61,21 @@ public class GLHelper {
             0.0f, 1.0f,
             1.0f, 1.0f,
             1.0f, 0.0f};
+    private static float CamTextureVertices_90[] = {
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 0.0f};
+    private static float CamTextureVertices_180[] = {
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f};
+    private static float CamTextureVertices_270[] = {
+            1.0f, 0.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 1.0f};
     private static float MediaCodecTextureVertices[] = {
             0.0f, 1.0f,
             0.0f, 0.0f,
@@ -205,11 +221,9 @@ public class GLHelper {
     public static void enableVertex(int posLoc, int texLoc, FloatBuffer shapeBuffer, FloatBuffer texBuffer) {
         GLES20.glEnableVertexAttribArray(posLoc);
         GLES20.glEnableVertexAttribArray(texLoc);
-        shapeBuffer.position(0);
         GLES20.glVertexAttribPointer(posLoc, COORDS_PER_VERTEX,
                 GLES20.GL_FLOAT, false,
                 COORDS_PER_VERTEX * 4, shapeBuffer);
-        texBuffer.position(0);
         GLES20.glVertexAttribPointer(texLoc, TEXTURE_COORDS_PER_VERTEX,
                 GLES20.GL_FLOAT, false,
                 TEXTURE_COORDS_PER_VERTEX * 4, texBuffer);
@@ -268,12 +282,42 @@ public class GLHelper {
         return result;
     }
 
-    public static FloatBuffer getCameraTextureVerticesBuffer() {
-        FloatBuffer result = ByteBuffer.allocateDirect(FLOAT_SIZE_BYTES * CamTextureVertices.length).
+    public static FloatBuffer getCameraTextureVerticesBuffer(final int directionFlag) {
+        float[] buffer;
+        switch (directionFlag & 0xF0) {
+            case RESCoreParameters.FLAG_DIRECTION_ROATATION_90:
+                buffer = CamTextureVertices_90;
+                break;
+            case RESCoreParameters.FLAG_DIRECTION_ROATATION_180:
+                buffer = CamTextureVertices_180;
+                break;
+            case RESCoreParameters.FLAG_DIRECTION_ROATATION_270:
+                buffer = CamTextureVertices_270;
+                break;
+            default:
+                buffer = CamTextureVertices;
+        }
+        if ((directionFlag & RESCoreParameters.FLAG_DIRECTION_FLIP_HORIZONTAL) != 0) {
+            buffer[0] = flip(buffer[0]);
+            buffer[2] = flip(buffer[2]);
+            buffer[4] = flip(buffer[4]);
+            buffer[6] = flip(buffer[6]);
+        }
+        if ((directionFlag & RESCoreParameters.FLAG_DIRECTION_FLIP_VERTICAL) != 0) {
+            buffer[1] = flip(buffer[1]);
+            buffer[3] = flip(buffer[3]);
+            buffer[5] = flip(buffer[5]);
+            buffer[7] = flip(buffer[7]);
+        }
+        FloatBuffer result = ByteBuffer.allocateDirect(FLOAT_SIZE_BYTES * buffer.length).
                 order(ByteOrder.nativeOrder()).
                 asFloatBuffer();
-        result.put(CamTextureVertices);
+        result.put(buffer);
         result.position(0);
         return result;
+    }
+
+    private static float flip(final float i) {
+        return i == 0.0f ? 1.0f : 0.0f;
     }
 }

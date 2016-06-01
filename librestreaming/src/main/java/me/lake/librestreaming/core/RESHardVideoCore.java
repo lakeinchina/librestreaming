@@ -304,7 +304,6 @@ public class RESHardVideoCore implements RESVideoCore {
             synchronized (syncPreview) {
                 synchronized (syncScreenCleanUp) {
                     if (screenGLWapper != null) {
-                        Log.e("aa", "drawscreenha");
                         cleanUpScreen();
                     }
                     syncScreenCleanUp.notify();
@@ -399,26 +398,21 @@ public class RESHardVideoCore implements RESVideoCore {
 
         private void drawScreen() {
             synchronized (syncPreview) {
-                Log.e("aa", "drawscreen1");
                 if (screenParams.surfaceTexture == null) {
                     synchronized (syncScreenCleanUp) {
                         if (screenGLWapper == null) {
-                            Log.e("aa", "drawscreen2");
                             return;
                         } else {
-                            Log.e("aa", "drawscreen3");
                             cleanUpScreen();
                         }
                         syncScreenCleanUp.notify();
                     }
                 }
                 if (screenGLWapper == null) {
-                    Log.e("aa", "drawscreen4");
                     screenGLWapper = new ScreenGLWapper();
                     GLHelper.initScreenGL(screenGLWapper, mediaCodecGLWapper.eglContext, screenParams.surfaceTexture);
                     initScreenProgram(screenGLWapper);
                 }
-                Log.e("aa", "drawscreen");
                 GLHelper.currentScreen(screenGLWapper);
                 //drawScreen
                 GLES20.glUseProgram(screenGLWapper.drawProgram);

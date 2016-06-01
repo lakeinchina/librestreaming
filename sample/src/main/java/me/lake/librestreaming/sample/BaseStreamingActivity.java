@@ -74,10 +74,12 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1024);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
+        resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
             resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
-            resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_270);
+            resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
+        } else {
+            resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
         }
         resConfig.setRtmpAddr("rtmp://10.57.8.120/live/livestream");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");

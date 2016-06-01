@@ -130,7 +130,6 @@ public class GLHelper {
         }
         int[] values = new int[1];
         EGL14.eglQueryContext(wapper.eglDisplay, wapper.eglContext, EGL14.EGL_CONTEXT_CLIENT_VERSION, values, 0);
-        Log.d("AA", "mediaWapper,EGLContext created, client version " + values[0]);
         wapper.eglSurface = EGL14.eglCreateWindowSurface(wapper.eglDisplay, wapper.eglConfig, mediaInputSurface, surfaceAttribs, 0);
         if (null == wapper.eglSurface || EGL14.EGL_NO_SURFACE == wapper.eglSurface) {
             throw new RuntimeException("eglCreateWindowSurface,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
@@ -286,16 +285,16 @@ public class GLHelper {
         float[] buffer;
         switch (directionFlag & 0xF0) {
             case RESCoreParameters.FLAG_DIRECTION_ROATATION_90:
-                buffer = CamTextureVertices_90;
+                buffer = CamTextureVertices_90.clone();
                 break;
             case RESCoreParameters.FLAG_DIRECTION_ROATATION_180:
-                buffer = CamTextureVertices_180;
+                buffer = CamTextureVertices_180.clone();
                 break;
             case RESCoreParameters.FLAG_DIRECTION_ROATATION_270:
-                buffer = CamTextureVertices_270;
+                buffer = CamTextureVertices_270.clone();
                 break;
             default:
-                buffer = CamTextureVertices;
+                buffer = CamTextureVertices.clone();
         }
         if ((directionFlag & RESCoreParameters.FLAG_DIRECTION_FLIP_HORIZONTAL) != 0) {
             buffer[0] = flip(buffer[0]);

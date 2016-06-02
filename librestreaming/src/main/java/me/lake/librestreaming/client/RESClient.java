@@ -19,6 +19,7 @@ import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
+import me.lake.librestreaming.model.Size;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -195,6 +196,9 @@ public class RESClient {
             camera.release();
             audioRecord.release();
         }
+    }
+    public Size getVideoSize() {
+        return new Size(coreParameters.videoWidth,coreParameters.videoHeight);
     }
 
     /**

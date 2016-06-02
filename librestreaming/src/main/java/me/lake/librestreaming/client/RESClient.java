@@ -32,6 +32,11 @@ public class RESClient {
         CallbackDelivery.i();
     }
 
+    /**
+     * prepare to stream
+     * @param resConfig config
+     * @return true if prepare success
+     */
     public boolean prepare(RESConfig resConfig) {
         synchronized (SyncOp) {
             checkDirection(resConfig);
@@ -67,6 +72,9 @@ public class RESClient {
     }
 
 
+    /**
+     * start to stream
+     */
     public void start() {
         synchronized (SyncOp) {
             rtmpSender.start(coreParameters.rtmpAddr);
@@ -76,6 +84,9 @@ public class RESClient {
         }
     }
 
+    /**
+     * stop to stream
+     */
     public void stop() {
         synchronized (SyncOp) {
             videoClient.stop();
@@ -85,6 +96,9 @@ public class RESClient {
         }
     }
 
+    /**
+     * clean up
+     */
     public void destroy() {
         synchronized (SyncOp) {
             rtmpSender.destroy();
@@ -112,7 +126,7 @@ public class RESClient {
     }
 
     /**
-     * change camera on running.
+     * change camera on running.<br/>
      * call it AFTER {@link #start()} & BEFORE {@link #stop()}
      */
     public boolean swapCamera() {

@@ -59,8 +59,8 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         sb_attr.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                BaseSoftVideoFilter filter = resClient.acquireSoftVideoFilter();
-                resClient.releaseSoftVideoFilter();
+                BaseHardVideoFilter filter = resClient.acquireHardVideoFilter();
+                resClient.releaseHardVideoFilter();
             }
 
             @Override

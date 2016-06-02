@@ -2,7 +2,6 @@ package me.lake.librestreaming.core;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 

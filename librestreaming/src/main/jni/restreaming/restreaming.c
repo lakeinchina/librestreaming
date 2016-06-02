@@ -66,6 +66,15 @@ JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_GLESRender_NV21TOYUV
 		(*env)->ReleaseByteArrayElements(env,dstVarray,dstv,JNI_ABORT);
 		return;
 }
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_core_ColorHelper_FIXGLPIXEL
+(JNIEnv * env, jobject thiz, jintArray srcarray,jintArray dstarray,jint w,jint h) {
+        unsigned int *src = (unsigned int *)(*env)->GetIntArrayElements(env,srcarray, 0);
+        unsigned int *dst = (unsigned int *)(*env)->GetIntArrayElements(env,dstarray, 0);
+        FIXGLPIXEL(src,dst,w,h);
+        (*env)->ReleaseIntArrayElements(env,srcarray,src,JNI_ABORT);
+        (*env)->ReleaseIntArrayElements(env,dstarray,dst,JNI_ABORT);
+        return;
+}
 
 //rendering
 JNIEXPORT void JNICALL Java_me_lake_librestreaming_render_NativeRender_renderingSurface

@@ -1,5 +1,6 @@
 package me.lake.librestreaming.core;
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodec;
@@ -9,15 +10,16 @@ import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.util.Log;
 import android.view.Surface;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
@@ -45,6 +47,9 @@ public class RESHardVideoCore implements RESVideoCore {
     private VideoGLThread videoGLThread;
     //sender
     private VideoSenderThread videoSenderThread;
+
+    final private Object syncResScreenShotListener = new Object();
+    private RESScreenShotListener resScreenShotListener;
 
     public RESHardVideoCore(RESCoreParameters parameters) {
         resCoreParameters = parameters;
@@ -168,13 +173,14 @@ public class RESHardVideoCore implements RESVideoCore {
     public void destroyPreview() {
         synchronized (syncOp) {
             if (videoGLThread != null) {
-                synchronized (syncPreview) {
-                    synchronized (syncScreenCleanUp) {
-                        try {
-                            syncScreenCleanUp.wait();
+                synchronized (syncScreenCleanUp) {
+                    try {
+                        synchronized (syncPreview) {
                             screenParams.surfaceTexture = null;
-                        } catch (InterruptedException ignored) {
                         }
+                        videoGLThread.wakeup();
+                        syncScreenCleanUp.wait();
+                    } catch (InterruptedException ignored) {
                     }
                 }
             }
@@ -198,7 +204,9 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public void takeScreenShot(RESScreenShotListener listener) {
-
+        synchronized (syncResScreenShotListener) {
+            resScreenShotListener = listener;
+        }
     }
 
     private class VideoGLThread extends Thread {
@@ -387,6 +395,8 @@ public class RESHardVideoCore implements RESVideoCore {
             GLHelper.enableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc,
                     shapeVerticesBuffer, mediaCodecTextureVerticesBuffer);
             drawFrame();
+            GLES20.glFinish();
+            checkScreenShot();
             GLHelper.disableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             GLES20.glUseProgram(0);
@@ -400,12 +410,14 @@ public class RESHardVideoCore implements RESVideoCore {
             synchronized (syncPreview) {
                 if (screenParams.surfaceTexture == null) {
                     synchronized (syncScreenCleanUp) {
-                        if (screenGLWapper == null) {
-                            return;
-                        } else {
+                        if (screenGLWapper != null) {
                             cleanUpScreen();
+                            screenGLWapper=null;
                         }
                         syncScreenCleanUp.notify();
+                        if (screenGLWapper == null) {
+                            return;
+                        }
                     }
                 }
                 if (screenGLWapper == null) {
@@ -498,6 +510,30 @@ public class RESHardVideoCore implements RESVideoCore {
 
         private void unlockVideoFilter() {
             lockVideoFilter.unlock();
+        }
+
+        private void checkScreenShot() {
+            synchronized (syncResScreenShotListener) {
+                if (resScreenShotListener != null) {
+                    Bitmap result = null;
+                    try {
+                        IntBuffer pixBuffer = IntBuffer.allocate(resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                        GLES20.glReadPixels(0, 0, resCoreParameters.videoWidth, resCoreParameters.videoHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixBuffer);
+                        int[] glPixel = pixBuffer.array();
+                        int[] argbPixel = new int[resCoreParameters.videoWidth * resCoreParameters.videoHeight];
+                        ColorHelper.FIXGLPIXEL(glPixel, argbPixel, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+                        result = Bitmap.createBitmap(argbPixel,
+                                resCoreParameters.videoWidth,
+                                resCoreParameters.videoHeight,
+                                Bitmap.Config.ARGB_8888);
+                    } catch (Exception e) {
+                        LogTools.trace("takescreenshot failed:", e);
+                    } finally {
+                        CallbackDelivery.i().post(new RESScreenShotListener.RESScreenShotListenerRunable(resScreenShotListener, result));
+                        resScreenShotListener = null;
+                    }
+                }
+            }
         }
     }
 

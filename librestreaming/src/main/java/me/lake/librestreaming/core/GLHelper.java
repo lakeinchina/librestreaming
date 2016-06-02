@@ -174,7 +174,6 @@ public class GLHelper {
         }
         int[] values = new int[1];
         EGL14.eglQueryContext(wapper.eglDisplay, wapper.eglContext, EGL14.EGL_CONTEXT_CLIENT_VERSION, values, 0);
-        Log.d("AA", "screenWapper,EGLContext created, client version " + values[0]);
         wapper.eglSurface = EGL14.eglCreateWindowSurface(wapper.eglDisplay, wapper.eglConfig, screenSurface, surfaceAttribs, 0);
         if (null == wapper.eglSurface || EGL14.EGL_NO_SURFACE == wapper.eglSurface) {
             throw new RuntimeException("eglCreateWindowSurface,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));

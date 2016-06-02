@@ -245,3 +245,28 @@ void NV21TOYUV(const unsigned char *src,const unsigned char *dstY,const unsigned
 		++i;
 	}
 }
+void FIXGLPIXEL(const unsigned int *src,unsigned int *dst,int width,int height)
+{
+    int i=0;
+    int x,y;
+    unsigned char temp;
+    unsigned char *srcucur;
+    unsigned char *dstucur;
+    unsigned char *dstu=dst;
+    unsigned char *srcu=src;
+    for(y=0;y<height;y++)
+    {
+        srcucur=(srcu+y*width*4);
+        int step=(height-y-1)*width*4;
+        dstucur=(dstu+step);
+        dstucur+=3;
+        for(x=0;x<width;x++){
+            (*dstucur)=(unsigned char)(*(srcucur+3));
+            (*(dstucur+1))=(unsigned char)(*(srcucur+2));
+            (*(dstucur+2))=(unsigned char)(*(srcucur+1));
+            (*(dstucur+3))=(unsigned char)(*(srcucur));
+            srcucur+=4;
+            dstucur+=4;
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package me.lake.librestreaming.model;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import me.lake.librestreaming.tools.LogTools;
 
@@ -8,6 +9,9 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-3-16.
  */
 public class RESCoreParameters {
+    public static final int FILTER_MODE_HARD = 1;
+    public static final int FILTER_MODE_SOFT = 2;
+
     public static final int RENDERING_MODE_NATIVE_WINDOW = 1;
     public static final int RENDERING_MODE_OPENGLES = 2;
     /**
@@ -22,6 +26,7 @@ public class RESCoreParameters {
 
     public boolean done;
     public boolean printDetailMsg;
+    public int filterMode;
     public int renderingMode;
     public String rtmpAddr;
     public int frontCameraDirectionMode;
@@ -62,6 +67,7 @@ public class RESCoreParameters {
     public RESCoreParameters() {
         done = false;
         printDetailMsg = false;
+        filterMode=-1;
         videoWidth = -1;
         videoHeight = -1;
         previewColorFormat = -1;
@@ -87,8 +93,12 @@ public class RESCoreParameters {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("ResParameter:");
         Field[] fields = this.getClass().getDeclaredFields();
         for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
             field.setAccessible(true);
             try {
                 sb.append(field.getName());

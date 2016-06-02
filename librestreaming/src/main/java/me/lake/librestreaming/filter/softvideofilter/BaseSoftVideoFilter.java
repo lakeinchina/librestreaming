@@ -1,10 +1,10 @@
-package me.lake.librestreaming.filter.videofilter;
+package me.lake.librestreaming.filter.softvideofilter;
 
 /**
  * Created by lake on 16-3-28.
  * NV21 colorformat filter
  */
-public class BaseVideoFilter {
+public class BaseSoftVideoFilter {
     protected int SIZE_WIDTH;
     protected int SIZE_HEIGHT;
     protected int SIZE_Y;

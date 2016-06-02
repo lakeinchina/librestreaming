@@ -1,118 +1,71 @@
 package me.lake.librestreaming.client;
 
 
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
-import me.lake.librestreaming.core.CameraHelper;
-import me.lake.librestreaming.core.RESCore;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.Size;
+import me.lake.librestreaming.rtmp.RESFlvData;
+import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
+import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
  * Created by lake on 16-3-16.
  */
 public class RESClient {
-    private static int[] supportedSrcVideoFrameColorType = new int[]{ImageFormat.NV21, ImageFormat.YV12};
-    private int cameraNum;
-    private int currentCameraIndex;
-    private RESCore resCore;
-    private SurfaceTexture videoTexture;
-    private Camera camera;
-
+    private RESVideoClient videoClient;
+    private RESAudioClient audioClient;
     private final Object SyncOp;
-
-    private AudioRecordThread audioRecordThread;
-    private AudioRecord audioRecord;
-    private byte[] audioBuffer;
-
     //parameters
     RESCoreParameters coreParameters;
+    private RESRtmpSender rtmpSender;
+    private RESFlvDataCollecter dataCollecter;
 
     public RESClient() {
-        cameraNum = Camera.getNumberOfCameras();
-        currentCameraIndex = Camera.CameraInfo.CAMERA_FACING_BACK;
         SyncOp = new Object();
         coreParameters = new RESCoreParameters();
         CallbackDelivery.i();
     }
 
+    /**
+     * prepare to stream
+     * @param resConfig config
+     * @return true if prepare success
+     */
     public boolean prepare(RESConfig resConfig) {
         synchronized (SyncOp) {
             checkDirection(resConfig);
-            if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
-                currentCameraIndex = resConfig.getDefaultCamera();
-            }
-            coreParameters.renderingMode = resConfig.getRenderingMode();
+            coreParameters.filterMode = resConfig.getFilterMode();
             coreParameters.rtmpAddr = resConfig.getRtmpAddr();
             coreParameters.printDetailMsg = resConfig.isPrintDetailMsg();
-            coreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
-            coreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-            coreParameters.audioBufferQueueNum = 5;
-
-            if (null == (camera = createCamera(currentCameraIndex))) {
-                LogTools.e("can not open camera");
+            coreParameters.senderQueueLength = 150;
+            videoClient = new RESVideoClient(coreParameters);
+            audioClient = new RESAudioClient(coreParameters);
+            if (!videoClient.prepare(resConfig)) {
+                LogTools.d("!!!!!videoClient.prepare()failed");
+                LogTools.d(coreParameters.toString());
                 return false;
             }
-            Camera.Parameters parameters = camera.getParameters();
-            CameraHelper.selectCameraFpsRange(parameters, coreParameters);
-            CameraHelper.selectCameraPreviewWH(parameters, coreParameters, resConfig.getTargetVideoSize());
-            //预览支持的颜色格式
-            List<Integer> srcColorTypes = new LinkedList<>();
-            List<Integer> supportedPreviewFormates = parameters.getSupportedPreviewFormats();
-            for (int colortype : supportedSrcVideoFrameColorType) {
-                if (supportedPreviewFormates.contains(colortype)) {
-                    srcColorTypes.add(colortype);
+            if (!audioClient.prepare(resConfig)) {
+                LogTools.d("!!!!!audioClient.prepare()failed");
+                LogTools.d(coreParameters.toString());
+                return false;
+            }
+            rtmpSender = new RESRtmpSender();
+            rtmpSender.prepare(coreParameters);
+            dataCollecter = new RESFlvDataCollecter() {
+                @Override
+                public void collect(RESFlvData flvData, int type) {
+                    rtmpSender.feed(flvData, type);
                 }
-            }
-            if (coreParameters.isPortrait) {
-                coreParameters.videoHeight = coreParameters.previewVideoWidth;
-                coreParameters.videoWidth = coreParameters.previewVideoHeight;
-            } else {
-                coreParameters.videoWidth = coreParameters.previewVideoWidth;
-                coreParameters.videoHeight = coreParameters.previewVideoHeight;
-            }
-            resCore = new RESCore();
-            resCore.setCurrentCamera(currentCameraIndex);
-            if (!resCore.config(coreParameters, srcColorTypes)) {
-                LogTools.e("resCore.config,failed");
-                coreParameters.dump();
-                return false;
-            }
-            if (!CameraHelper.configCamera(camera, coreParameters)) {
-                LogTools.e("CameraHelper.configCamera,Failed");
-                coreParameters.dump();
-                return false;
-            }
-            //all parameters have been set
-            if (!resCore.init(coreParameters)) {
-                LogTools.e("resCore.init,failed");
-                coreParameters.dump();
-                return false;
-            }
-            coreParameters.audioRecoderFormat = AudioFormat.ENCODING_PCM_16BIT;
-            coreParameters.audioRecoderChannelConfig = AudioFormat.CHANNEL_IN_MONO;
-            coreParameters.audioRecoderSliceSize = coreParameters.mediacodecAACSampleRate / 10;
-            coreParameters.audioRecoderBufferSize = coreParameters.audioRecoderSliceSize * 2;
-            coreParameters.audioRecoderSource = MediaRecorder.AudioSource.DEFAULT;
-            coreParameters.audioRecoderSampleRate = coreParameters.mediacodecAACSampleRate;
+            };
             coreParameters.done = true;
-
-            prepareVideo();
-            prepareAudio();
             LogTools.d("===INFO===coreParametersReady:");
             LogTools.d(coreParameters.toString());
             return true;
@@ -120,20 +73,39 @@ public class RESClient {
     }
 
 
+    /**
+     * start to stream
+     */
     public void start() {
         synchronized (SyncOp) {
-            if (!startVideo()) {
-                coreParameters.dump();
-                LogTools.e("RESClient,start(),failed");
-                return;
-            }
-            if (!startAudio()) {
-                coreParameters.dump();
-                LogTools.e("RESClient,start(),failed");
-                return;
-            }
-            resCore.start();
+            rtmpSender.start(coreParameters.rtmpAddr);
+            videoClient.start(dataCollecter);
+            audioClient.start(dataCollecter);
             LogTools.d("RESClient,start()");
+        }
+    }
+
+    /**
+     * stop to stream
+     */
+    public void stop() {
+        synchronized (SyncOp) {
+            videoClient.stop();
+            audioClient.stop();
+            rtmpSender.stop();
+            LogTools.d("RESClient,stop()");
+        }
+    }
+
+    /**
+     * clean up
+     */
+    public void destroy() {
+        synchronized (SyncOp) {
+            rtmpSender.destroy();
+            videoClient.destroy();
+            audioClient.destroy();
+            LogTools.d("RESClient,destroy()");
         }
     }
 
@@ -143,91 +115,93 @@ public class RESClient {
      * @param surfaceTexture to rendering preview
      */
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-        resCore.createPreview(surfaceTexture, visualWidth, visualHeight);
+        videoClient.createPreview(surfaceTexture, visualWidth, visualHeight);
     }
 
     public void updatePreview(int visualWidth, int visualHeight) {
-        resCore.updatePreview(visualWidth, visualHeight);
+        videoClient.updatePreview(visualWidth, visualHeight);
     }
 
     public void destroyPreview() {
-        resCore.destroyPreview();
+        videoClient.destroyPreview();
     }
 
     /**
-     * change camera on running.
+     * change camera on running.<br/>
      * call it AFTER {@link #start()} & BEFORE {@link #stop()}
      */
     public boolean swapCamera() {
         synchronized (SyncOp) {
             LogTools.d("RESClient,swapCamera()");
-            camera.stopPreview();
-            camera.release();
-            if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
-                LogTools.e("can not swap camera");
-                return false;
-            }
-            resCore.setCurrentCamera(currentCameraIndex);
-            CameraHelper.configCamera(camera, coreParameters);
-            prepareVideo();
-            startVideo();
-            return true;
+            return videoClient.swapCamera();
         }
     }
 
-    public void stop() {
-        synchronized (SyncOp) {
-            resCore.stop();
-            camera.stopPreview();
-            audioRecordThread.quit();
-            try {
-                audioRecordThread.join();
-            } catch (InterruptedException e) {
-            }
-            audioRecordThread = null;
-            audioRecord.stop();
-            LogTools.d("RESClient,stop()");
-        }
+    /**
+     * only for soft filter mode.<br/>
+     * use it to update filter property.<br/>
+     * call it with {@link #releaseSoftVideoFilter()}<br/>
+     * make sure to release it in 3ms
+     *
+     * @return the videofilter in use
+     */
+    public BaseSoftVideoFilter acquireSoftVideoFilter() {
+        return videoClient.acquireSoftVideoFilter();
     }
 
-    public void destroy() {
-        synchronized (SyncOp) {
-            resCore.destroy();
-            camera.release();
-            audioRecord.release();
-        }
+    /**
+     * only for soft filter mode.<br/>
+     * call it with {@link #acquireSoftVideoFilter()}
+     */
+    public void releaseSoftVideoFilter() {
+        videoClient.releaseSoftVideoFilter();
     }
+
     public Size getVideoSize() {
         return new Size(coreParameters.videoWidth,coreParameters.videoHeight);
     }
 
     /**
+     * only for soft filter mode.<br/>
+     * set videofilter.<br/>
+     * can be called Repeatedly.<br/>
+     * do NOT call it between {@link #acquireSoftVideoFilter()} & {@link #releaseSoftVideoFilter()}
+     *
+     * @param baseSoftVideoFilter videofilter to apply
+     */
+    public void setSoftVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
+        videoClient.setSoftVideoFilter(baseSoftVideoFilter);
+    }
+    /**
+     * only for hard filter mode.<br/>
      * use it to update filter property.<br/>
-     * call it with {@link #releaseVideoFilter()}<br/>
+     * call it with {@link #releaseHardVideoFilter()}<br/>
      * make sure to release it in 3ms
      *
      * @return the videofilter in use
      */
-    public BaseVideoFilter acquireVideoFilter() {
-        return resCore.acquireVideoFilter();
+    public BaseHardVideoFilter acquireHardVideoFilter() {
+        return videoClient.acquireHardVideoFilter();
     }
 
     /**
-     * call it with {@link #acquireVideoFilter()}
+     * only for hard filter mode.<br/>
+     * call it with {@link #acquireHardVideoFilter()}
      */
-    public void releaseVideoFilter() {
-        resCore.releaseVideoFilter();
+    public void releaseHardVideoFilter() {
+        videoClient.releaseHardVideoFilter();
     }
 
     /**
+     * only for hard filter mode.<br/>
      * set videofilter.<br/>
      * can be called Repeatedly.<br/>
-     * do NOT call it between {@link #acquireVideoFilter()} & {@link #releaseVideoFilter()}
+     * do NOT call it between {@link #acquireHardVideoFilter()} & {@link #acquireHardVideoFilter()}
      *
-     * @param baseVideoFilter videofilter to apply
+     * @param baseHardVideoFilter videofilter to apply
      */
-    public void setVideoFilter(BaseVideoFilter baseVideoFilter) {
-        resCore.setVideoFilter(baseVideoFilter);
+    public void setHardVideoFilter(BaseHardVideoFilter baseHardVideoFilter) {
+        videoClient.setHardVideoFilter(baseHardVideoFilter);
     }
 
     /**
@@ -236,7 +210,7 @@ public class RESClient {
      * @return speed in B/s
      */
     public int getAVSpeed() {
-        return resCore.getTotalSpeed();
+        return rtmpSender.getTotalSpeed();
     }
 
     /**
@@ -245,7 +219,7 @@ public class RESClient {
      * @param connectionListener
      */
     public void setConnectionListener(RESConnectionListener connectionListener) {
-        resCore.setConnectionListener(connectionListener);
+        rtmpSender.setConnectionListener(connectionListener);
     }
 
     /**
@@ -262,11 +236,8 @@ public class RESClient {
      *
      * @param targetPercent zoompercent
      */
-    public void setZoomByPercent(float targetPercent) {
-        targetPercent = Math.min(Math.max(0f, targetPercent), 1f);
-        Camera.Parameters p = camera.getParameters();
-        p.setZoom((int) (p.getMaxZoom() * targetPercent));
-        camera.setParameters(p);
+    public boolean setZoomByPercent(float targetPercent) {
+        return videoClient.setZoomByPercent(targetPercent);
     }
 
     /**
@@ -275,132 +246,16 @@ public class RESClient {
      * @return true if operation success
      */
     public boolean toggleFlashLight() {
-        try {
-            Camera.Parameters parameters = camera.getParameters();
-            List<String> flashModes = parameters.getSupportedFlashModes();
-            String flashMode = parameters.getFlashMode();
-            if (!Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode)) {
-                if (flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                    camera.setParameters(parameters);
-                    return true;
-                }
-            } else if (!Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)) {
-                if (flashModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                    camera.setParameters(parameters);
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            LogTools.d("toggleFlashLight,failed" + e.getMessage());
-            return false;
-        }
-        return false;
+        return videoClient.toggleFlashLight();
     }
 
     public void takeScreenShot(RESScreenShotListener listener) {
-        resCore.takeScreenShot(listener);
+        videoClient.takeScreenShot(listener);
     }
 
     /**
      * =====================PRIVATE=================
      **/
-    private Camera createCamera(int cameraId) {
-        try {
-            camera = Camera.open(cameraId);
-        } catch (SecurityException e) {
-            LogTools.trace("no permission", e);
-            return null;
-        } catch (Exception e) {
-            LogTools.trace("camera.open()failed", e);
-            return null;
-        }
-        try {
-            videoTexture = new SurfaceTexture(10);
-            camera.setPreviewTexture(videoTexture);
-        } catch (IOException e) {
-            LogTools.trace(e);
-            camera.release();
-            return null;
-        }
-        return camera;
-    }
-
-    private boolean startVideo() {
-        //some fucking phone release their callback after stopPreview
-        //so we set it at startVideo
-        camera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
-            @Override
-            public void onPreviewFrame(byte[] data, Camera camera) {
-                if (resCore != null && data != null) {
-                    resCore.queueVideo(data);
-                }
-                camera.addCallbackBuffer(data);
-            }
-        });
-        camera.startPreview();
-        return true;
-    }
-
-    private boolean prepareVideo() {
-        camera.addCallbackBuffer(new byte[coreParameters.previewBufferSize]);
-        camera.addCallbackBuffer(new byte[coreParameters.previewBufferSize]);
-        return true;
-    }
-
-    private boolean prepareAudio() {
-        int minBufferSize = AudioRecord.getMinBufferSize(coreParameters.audioRecoderSampleRate,
-                coreParameters.audioRecoderChannelConfig,
-                coreParameters.audioRecoderFormat);
-        audioRecord = new AudioRecord(coreParameters.audioRecoderSource,
-                coreParameters.audioRecoderSampleRate,
-                coreParameters.audioRecoderChannelConfig,
-                coreParameters.audioRecoderFormat,
-                minBufferSize * 5);
-        audioBuffer = new byte[coreParameters.audioRecoderBufferSize];
-        if (AudioRecord.STATE_INITIALIZED != audioRecord.getState()) {
-            LogTools.e("audioRecord.getState()!=AudioRecord.STATE_INITIALIZED!");
-            return false;
-        }
-        if (AudioRecord.SUCCESS != audioRecord.setPositionNotificationPeriod(coreParameters.audioRecoderSliceSize)) {
-            LogTools.e("AudioRecord.SUCCESS != audioRecord.setPositionNotificationPeriod(coreParameters.audioRecoderSliceSize");
-            return false;
-        }
-        return true;
-    }
-
-    private boolean startAudio() {
-        audioRecord.startRecording();
-        audioRecordThread = new AudioRecordThread();
-        audioRecordThread.start();
-        return true;
-    }
-
-
-    class AudioRecordThread extends Thread {
-        private boolean isRunning = true;
-
-        AudioRecordThread() {
-            isRunning = true;
-        }
-
-        public void quit() {
-            isRunning = false;
-        }
-
-        @Override
-        public void run() {
-            LogTools.d("AudioRecordThread,tid=" + Thread.currentThread().getId());
-            while (isRunning) {
-                int size = audioRecord.read(audioBuffer, 0, audioBuffer.length);
-                if (isRunning && resCore != null && size > 0) {
-                    resCore.queueAudio(audioBuffer);
-                }
-            }
-        }
-    }
-
     private void checkDirection(RESConfig resConfig) {
         int frontFlag = resConfig.getFrontCameraDirectionMode();
         int backFlag = resConfig.getBackCameraDirectionMode();
@@ -447,5 +302,9 @@ public class RESClient {
         }
         coreParameters.backCameraDirectionMode = backFlag;
         coreParameters.frontCameraDirectionMode = frontFlag;
+    }
+
+    static {
+        System.loadLibrary("restreaming");
     }
 }

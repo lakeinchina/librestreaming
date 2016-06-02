@@ -1,11 +1,11 @@
-package me.lake.librestreaming.sample.filter;
+package me.lake.librestreaming.sample.softfilter;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 
 /**
  * Created by lake on 16-4-1.
  */
-public class GrayFilter extends BaseVideoFilter{
+public class GrayFilterSoft extends BaseSoftVideoFilter {
     @Override
     public boolean onFrame(byte[] orignBuff, byte[] targetBuff, long presentationTimeMs, int sequenceNum) {
         System.arraycopy(orignBuff,0,targetBuff,0,SIZE_Y);

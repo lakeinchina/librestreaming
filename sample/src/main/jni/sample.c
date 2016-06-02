@@ -4,7 +4,7 @@
 //
 // Created by lake on 2016.04.05
 //
-JNIEXPORT void JNICALL Java_me_lake_librestreaming_sample_filter_BlackWhiteFilter_BlackWhite
+JNIEXPORT void JNICALL Java_me_lake_librestreaming_sample_softfilter_BlackWhiteFilter_BlackWhite
 (JNIEnv * env, jobject thiz, jbyteArray srcarray,jint ySize,jint totalSize,jbyte gap) {
 	unsigned char *src = (unsigned char *)(*env)->GetByteArrayElements(env,srcarray, 0);
 	unsigned char igap = gap;

@@ -1,13 +1,13 @@
-package me.lake.librestreaming.sample.filter;
+package me.lake.librestreaming.sample.softfilter;
 
 import android.graphics.Bitmap;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 
 /**
  * Created by lake on 16-4-1.
  */
-public class IconFilter extends BaseVideoFilter {
+public class IconFilterSoft extends BaseSoftVideoFilter {
     byte[] imageByte;
     int iconYSize;
     private int iconW;
@@ -18,7 +18,7 @@ public class IconFilter extends BaseVideoFilter {
         xPos = x;
     }
 
-    public IconFilter(Bitmap bitmap) {
+    public IconFilterSoft(Bitmap bitmap) {
         iconW = bitmap.getWidth();
         iconH = bitmap.getHeight();
         imageByte = new byte[iconW * iconH * 3 / 2];

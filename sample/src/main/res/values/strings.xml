@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">LibREStreaming</string>
+    <string name="introduction">land:Landscape video stream.\nport:Portrait video stream.\nsoft:cpu image filter mode.\nhard:gpu image filter mode using opengles.</string>
+    <string name="url">https://github.com/lakeinchina/librestreaming</string>
 </resources>

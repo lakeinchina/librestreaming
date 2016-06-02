@@ -1,14 +1,14 @@
-package me.lake.librestreaming.sample.filter;
+package me.lake.librestreaming.sample.softfilter;
 
-import me.lake.librestreaming.filter.videofilter.BaseVideoFilter;
+import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 
 /**
  * Created by lake on 16-4-8.
  */
-public class FixYFilter extends BaseVideoFilter {
+public class FixYFilterSoft extends BaseSoftVideoFilter {
     private byte y;
 
-    public FixYFilter(byte y) {
+    public FixYFilterSoft(byte y) {
         this.y = y;
     }
 

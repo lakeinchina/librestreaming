@@ -1,19 +1,23 @@
 package me.lake.librestreaming.core;
 
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.Size;
+import me.lake.librestreaming.tools.LogTools;
 
 /**
  * Created by lake on 16-3-16.
  */
 public class CameraHelper {
     public static int targetFps = 30000;
+    private static int[] supportedSrcVideoFrameColorType = new int[]{ImageFormat.NV21, ImageFormat.YV12};
 
     public static boolean configCamera(Camera camera, RESCoreParameters coreParameters) {
         Camera.Parameters parameters = camera.getParameters();
@@ -78,6 +82,25 @@ public class CameraHelper {
                 return;
             }
         }
+    }
 
+    public static boolean selectCameraColorFormat(Camera.Parameters parameters, RESCoreParameters coreParameters) {
+        List<Integer> srcColorTypes = new LinkedList<>();
+        List<Integer> supportedPreviewFormates = parameters.getSupportedPreviewFormats();
+        for (int colortype : supportedSrcVideoFrameColorType) {
+            if (supportedPreviewFormates.contains(colortype)) {
+                srcColorTypes.add(colortype);
+            }
+        }
+        //select preview colorformat
+        if (srcColorTypes.contains(coreParameters.previewColorFormat = ImageFormat.NV21)) {
+            coreParameters.previewColorFormat = ImageFormat.NV21;
+        } else if ((srcColorTypes.contains(coreParameters.previewColorFormat = ImageFormat.YV12))) {
+            coreParameters.previewColorFormat = ImageFormat.YV12;
+        } else {
+            LogTools.e("!!!!!!!!!!!UnSupport,previewColorFormat");
+            return false;
+        }
+        return true;
     }
 }

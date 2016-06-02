@@ -7,6 +7,11 @@ import android.hardware.Camera;
  * Created by lake on 16-3-16.
  */
 public class RESConfig {
+    public static class FilterMode {
+        public static final int HARD = RESCoreParameters.FILTER_MODE_HARD;
+        public static final int SOFT = RESCoreParameters.FILTER_MODE_SOFT;
+    }
+
     public static class RenderingMode {
         public static final int NativeWindow = RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW;
         public static final int OpenGLES = RESCoreParameters.RENDERING_MODE_OPENGLES;
@@ -21,6 +26,7 @@ public class RESConfig {
         public static final int FLAG_DIRECTION_ROATATION_270 = RESCoreParameters.FLAG_DIRECTION_ROATATION_270;
     }
 
+    private int filterMode;
     private Size targetVideoSize;
     private int videoBufferQueueNum;
     private int bitRate;
@@ -36,6 +42,7 @@ public class RESConfig {
 
     public static RESConfig obtain() {
         RESConfig res = new RESConfig();
+        res.setFilterMode(FilterMode.SOFT);
         res.setRenderingMode(RenderingMode.NativeWindow);
         res.setTargetVideoSize(new Size(1280, 720));
         res.setVideoBufferQueueNum(5);
@@ -47,36 +54,110 @@ public class RESConfig {
         return res;
     }
 
-    public int getDefaultCamera() {
-        return defaultCamera;
+    /**
+     * set the filter mode.
+     *
+     * @param filterMode {@link FilterMode}
+     */
+    public void setFilterMode(int filterMode) {
+        this.filterMode = filterMode;
     }
 
+    /**
+     * set the default camera to start stream
+     */
     public void setDefaultCamera(int defaultCamera) {
         this.defaultCamera = defaultCamera;
     }
 
-    public int getFrontCameraDirectionMode() {
-        return frontCameraDirectionMode;
-    }
-
+    /**
+     * set front camera rotation & flip
+     * @param frontCameraDirectionMode {@link DirectionMode}
+     */
     public void setFrontCameraDirectionMode(int frontCameraDirectionMode) {
         this.frontCameraDirectionMode = frontCameraDirectionMode;
+    }
+    /**
+     * set front camera rotation & flip
+     * @param backCameraDirectionMode {@link DirectionMode}
+     */
+    public void setBackCameraDirectionMode(int backCameraDirectionMode) {
+        this.backCameraDirectionMode = backCameraDirectionMode;
+    }
+
+    /**
+     * set  renderingMode when using soft mode<br/>
+     * no use for hard mode
+     * @param renderingMode {@link RenderingMode}
+     */
+    public void setRenderingMode(int renderingMode) {
+        this.renderingMode = renderingMode;
+    }
+
+    /**
+     * no use for now
+     * @param printDetailMsg
+     */
+    public void setPrintDetailMsg(boolean printDetailMsg) {
+        this.printDetailMsg = printDetailMsg;
+    }
+
+    /**
+     * set the target video size.<br/>
+     * real video size may different from it.Depend on device.
+     * @param videoSize
+     */
+    public void setTargetVideoSize(Size videoSize) {
+        targetVideoSize = videoSize;
+    }
+
+    /**
+     * set video buffer number for soft mode.<br/>
+     * num larger:video Smoother,more memory.
+     * @param num
+     */
+    public void setVideoBufferQueueNum(int num) {
+        videoBufferQueueNum = num;
+    }
+
+    /**
+     * set video bitrate
+     * @param bitRate
+     */
+    public void setBitRate(int bitRate) {
+        this.bitRate = bitRate;
+    }
+
+    public int getVideoBufferQueueNum() {
+        return videoBufferQueueNum;
+    }
+
+    public int getBitRate() {
+        return bitRate;
+    }
+
+    public Size getTargetVideoSize() {
+        return targetVideoSize;
+    }
+
+    public int getFilterMode() {
+        return filterMode;
+    }
+
+    public int getDefaultCamera() {
+        return defaultCamera;
     }
 
     public int getBackCameraDirectionMode() {
         return backCameraDirectionMode;
     }
 
-    public void setBackCameraDirectionMode(int backCameraDirectionMode) {
-        this.backCameraDirectionMode = backCameraDirectionMode;
+    public int getFrontCameraDirectionMode() {
+        return frontCameraDirectionMode;
     }
 
     public int getRenderingMode() {
         return renderingMode;
-    }
-
-    public void setRenderingMode(int renderingMode) {
-        this.renderingMode = renderingMode;
     }
 
     public String getRtmpAddr() {
@@ -89,34 +170,5 @@ public class RESConfig {
 
     public boolean isPrintDetailMsg() {
         return printDetailMsg;
-    }
-
-    public void setPrintDetailMsg(boolean printDetailMsg) {
-        this.printDetailMsg = printDetailMsg;
-    }
-
-    public void setTargetVideoSize(Size videoSize) {
-        targetVideoSize = videoSize;
-    }
-
-    public void setBitRate(int bitRate) {
-        this.bitRate = bitRate;
-    }
-
-    public void setVideoBufferQueueNum(int num) {
-        videoBufferQueueNum = num;
-    }
-
-
-    public Size getTargetVideoSize() {
-        return targetVideoSize;
-    }
-
-    public int getVideoBufferQueueNum() {
-        return videoBufferQueueNum;
-    }
-
-    public int getBitRate() {
-        return bitRate;
     }
 }

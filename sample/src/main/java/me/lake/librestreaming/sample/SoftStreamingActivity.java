@@ -40,15 +40,15 @@ public class SoftStreamingActivity extends BaseStreamingActivity {
          * filters just for demo
          */
         ArrayList<FilterItem> filterItems = new ArrayList<FilterItem>();
-        filterItems.add(new FilterItem("nofilter", null));
-        filterItems.add(new FilterItem("DoNothingFilterSoft", new DoNothingFilterSoft()));
-        filterItems.add(new FilterItem("GrayFilterSoft", new GrayFilterSoft()));
-        filterItems.add(new FilterItem("BlackWhiteFilterSoft", new BlackWhiteFilterSoft((byte) 0x80)));
+        filterItems.add(new FilterItem("NoFilter", null));
+        filterItems.add(new FilterItem("DoNothingFilter", new DoNothingFilterSoft()));
+        filterItems.add(new FilterItem("GrayFilter", new GrayFilterSoft()));
+        filterItems.add(new FilterItem("BlackWhiteFilter", new BlackWhiteFilterSoft((byte) 0x80)));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
-        filterItems.add(new FilterItem("IconFilterSoft", new IconFilterSoft(bitmap)));
-        filterItems.add(new FilterItem("BlurFilterSoft", new BlurFilterSoft(this)));
-        filterItems.add(new FilterItem("SkinBlurFilterSoft", new SkinBlurFilterSoft(this)));
-        filterItems.add(new FilterItem("FixYFilterSoft", new FixYFilterSoft((byte) 0)));
+        filterItems.add(new FilterItem("IconFilter", new IconFilterSoft(bitmap)));
+        filterItems.add(new FilterItem("BlurFilter", new BlurFilterSoft(this)));
+        filterItems.add(new FilterItem("SkinBlurFilter", new SkinBlurFilterSoft(this)));
+        filterItems.add(new FilterItem("FixYFilter", new FixYFilterSoft((byte) 0)));
         Bitmap[] ans = new Bitmap[4];
         ans[0] = BitmapFactory.decodeResource(getResources(), R.drawable.animationa);
         ans[1] = BitmapFactory.decodeResource(getResources(), R.drawable.animationb);

@@ -1,5 +1,7 @@
 package me.lake.librestreaming.sample;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -16,15 +18,11 @@ import java.util.List;
 
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
-import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
+import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
-import me.lake.librestreaming.sample.softfilter.AnimationFilterSoft;
-import me.lake.librestreaming.sample.softfilter.BlackWhiteFilterSoft;
-import me.lake.librestreaming.sample.softfilter.BlurFilterSoft;
-import me.lake.librestreaming.sample.softfilter.FixYFilterSoft;
-import me.lake.librestreaming.sample.softfilter.IconFilterSoft;
-import me.lake.librestreaming.sample.softfilter.SkinBlurFilterSoft;
+import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
+import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
 
 /**
  * Created by lake on 16-5-31.
@@ -40,9 +38,14 @@ public class HardStreamingActivity extends BaseStreamingActivity {
          * filters just for demo
          */
         ArrayList<FilterItem> filterItems = new ArrayList<>();
-        filterItems.add(new FilterItem("nofilter", null));
-        filterItems.add(new FilterItem("DoNothingFilterSoft", new OriginalHardVideoFilter()));
-        filterItems.add(new FilterItem("FishEyeFilterHard", new FishEyeFilterHard()));
+        filterItems.add(new FilterItem("NoFilter", null));
+        filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter()));
+        filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        filterItems.add(new FilterItem("NormalBlend", new TowInputFilterHard(bitmap)));
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        filterItems.add(new FilterItem("DifferenceBlend", new DifferenceBlendFilterHard(bitmap)));
+        filterItems.add(new FilterItem("SobelEdgeDetection",new SobelEdgeDetectionHardVideoFilter()));
         filterAdapter = new FilterAdapter();
         filterAdapter.updateFilters(filterItems);
         lv_filter.setAdapter(filterAdapter);

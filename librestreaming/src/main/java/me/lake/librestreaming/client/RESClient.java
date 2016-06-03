@@ -210,7 +210,7 @@ public class RESClient {
      * @return speed in B/s
      */
     public int getAVSpeed() {
-        return rtmpSender.getTotalSpeed();
+        return rtmpSender==null?0:rtmpSender.getTotalSpeed();
     }
 
     /**

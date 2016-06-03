@@ -1,7 +1,9 @@
 package me.lake.librestreaming.tools;
 
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -64,6 +66,7 @@ public class GLESTools {
         }
         return program;
     }
+
     public static void checkGlError(String op) {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
@@ -71,5 +74,30 @@ public class GLESTools {
             LogTools.d(msg);
             throw new RuntimeException(msg);
         }
+    }
+
+    public static final int NO_TEXTURE = -1;
+
+    public static int loadTexture(final Bitmap image, final int reUseTexture) {
+        int[] texture = new int[1];
+        if (reUseTexture == NO_TEXTURE) {
+            GLES20.glGenTextures(1, texture, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                    GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                    GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                    GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                    GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, image, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        } else {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, reUseTexture);
+            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, image);
+            texture[0] = reUseTexture;
+        }
+        return texture[0];
     }
 }

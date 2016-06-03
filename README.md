@@ -7,11 +7,11 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Soft mode filter can be implemented by processing NV21 image array captured from camera  
 - Hard mode filter can be implemented by rendering image texture captured from camera
 - Support pixel rotation and flip
-- Support encoding paramaters like resolution(depend on device), bitrate, etc.
+- Support encoding paramaters like resolution(depend on device), bitrate, etc
 - H264 profile is auto-adjusted on different device
 - Fast front/rear camera swaping without interrupt rtmp streaming
 
-### Soft Mode Filter
+### Soft Filter Mode
 
 - Color format is NV21
 - Create your own filter by extending BaseSoftVideoFilter 
@@ -19,7 +19,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Adjust your filter properties between acquireSoftVideoFilter and releaseSoftVideoFilter, call releaseSoftVideoFilter as soon as operation finished (after acquireSoftVideoFilter), interval better be less than 3ms
 
 
-### Hard Mode Filter
+### Hard Filter Mode
 
 - Create your own filter by extending either BaseHardVideoFilter or OriginalHardVideoFilter
 - OriginalHardVideoFilter is more simple to use, just need to proivde custmom shader to get  various effects

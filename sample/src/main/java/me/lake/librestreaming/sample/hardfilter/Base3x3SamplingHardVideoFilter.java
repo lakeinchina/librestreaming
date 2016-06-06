@@ -14,7 +14,7 @@ import me.lake.librestreaming.tools.GLESTools;
  * modified base on gpuimage:GPUImage3x3TextureSamplingFilter
  */
 public class Base3x3SamplingHardVideoFilter extends BaseHardVideoFilter {
-    protected String vertexShader_filter= "" +
+    protected String vertexShader_filter = "" +
             "attribute vec4 aCamPosition;\n" +
             "attribute vec2 aCamTextureCoord;\n" +
             "varying vec2 vCamTextureCoord;\n" +
@@ -63,9 +63,16 @@ public class Base3x3SamplingHardVideoFilter extends BaseHardVideoFilter {
     private float mTexelWidth;
     private float mTexelHeight;
     private float mLineSize = 1.0f;
-    public Base3x3SamplingHardVideoFilter()
-    {
+
+    public Base3x3SamplingHardVideoFilter(String vertexShaderCode, String fragmentShaderCode) {
+        if (vertexShaderCode != null) {
+            vertexShader_filter = vertexShaderCode;
+        }
+        if (fragmentShaderCode != null) {
+            fragmentshader_filter = fragmentShaderCode;
+        }
     }
+
     @Override
     public void onInit(int VWidth, int VHeight) {
         super.onInit(VWidth, VHeight);

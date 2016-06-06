@@ -32,6 +32,16 @@ public class OriginalHardVideoFilter extends BaseHardVideoFilter {
             "    vec4  color = texture2D(uCamTexture, vCamTextureCoord);\n" +
             "    gl_FragColor = color;\n" +
             "}";
+
+    public OriginalHardVideoFilter(String vertexShaderCode, String fragmentShaderCode) {
+        if (vertexShaderCode != null) {
+            vertexShader_filter = vertexShaderCode;
+        }
+        if (fragmentShaderCode != null) {
+            fragmentshader_filter = fragmentShaderCode;
+        }
+    }
+
     @Override
     public void onInit(int VWidth, int VHeight) {
         super.onInit(VWidth, VHeight);

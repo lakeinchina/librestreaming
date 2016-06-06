@@ -14,7 +14,7 @@ import me.lake.librestreaming.tools.GLESTools;
 /**
  * Created by lake on 03/06/16.
  */
-public class TowInputFilterHard extends BaseHardVideoFilter{
+public class TowInputFilterHard extends BaseHardVideoFilter {
     protected int glProgram;
     protected int glCamTextureLoc;
     protected int glCamPostionLoc;
@@ -54,14 +54,21 @@ public class TowInputFilterHard extends BaseHardVideoFilter{
     protected FloatBuffer textureImageCoordBuffer;
     protected int imageTexture;
     private Bitmap image;
-    public TowInputFilterHard(Bitmap image) {
-        this.image = image;
 
+    public TowInputFilterHard(String vertexShaderCode, String fragmentShaderCode, Bitmap image) {
+        this.image = image;
+        if (vertexShaderCode != null) {
+            vertexShader_filter = vertexShaderCode;
+        }
+        if (fragmentShaderCode != null) {
+            fragmentshader_filter = fragmentShaderCode;
+        }
     }
+
     @Override
     public void onInit(int VWidth, int VHeight) {
         super.onInit(VWidth, VHeight);
-        imageTexture = GLESTools.loadTexture(image,GLESTools.NO_TEXTURE);
+        imageTexture = GLESTools.loadTexture(image, GLESTools.NO_TEXTURE);
         glProgram = GLESTools.createProgram(vertexShader_filter, fragmentshader_filter);
         GLES20.glUseProgram(glProgram);
         glCamTextureLoc = GLES20.glGetUniformLocation(glProgram, "uCamTexture");
@@ -116,7 +123,7 @@ public class TowInputFilterHard extends BaseHardVideoFilter{
     public void onDestroy() {
         super.onDestroy();
         GLES20.glDeleteProgram(glProgram);
-        GLES20.glDeleteTextures(1,new int[]{imageTexture},0);
+        GLES20.glDeleteTextures(1, new int[]{imageTexture}, 0);
         textureImageCoordBuffer.clear();
     }
 }

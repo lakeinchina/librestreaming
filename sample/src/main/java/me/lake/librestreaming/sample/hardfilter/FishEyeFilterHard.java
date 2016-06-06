@@ -34,9 +34,12 @@ public class FishEyeFilterHard extends OriginalHardVideoFilter {
             "    }\n" +
             "}";
 
+    public FishEyeFilterHard() {
+        super(null, FRAGMENTSHADER);
+    }
+
     @Override
     public void onInit(int VWidth, int VHeight) {
-        fragmentshader_filter = FRAGMENTSHADER;
         super.onInit(VWidth, VHeight);
     }
 }

@@ -6,7 +6,7 @@ import android.graphics.Bitmap;
  * Created by lake on 03/06/16.
  */
 public class DifferenceBlendFilterHard extends TowInputFilterHard {
-    protected String FRAGMENTSHADER = "" +
+    private static String FRAGMENTSHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
             "varying mediump vec2 vCamTextureCoord;\n" +
@@ -20,12 +20,11 @@ public class DifferenceBlendFilterHard extends TowInputFilterHard {
             "}";
 
     public DifferenceBlendFilterHard(Bitmap image) {
-        super(image);
+        super(null,FRAGMENTSHADER,image);
     }
 
     @Override
     public void onInit(int VWidth, int VHeight) {
-        fragmentshader_filter = FRAGMENTSHADER;
         super.onInit(VWidth, VHeight);
     }
 }

@@ -3,7 +3,7 @@ package me.lake.librestreaming.sample.hardfilter;
 /**
  * Created by lake on 03/06/16.
  */
-public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoFilter{
+public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoFilter {
     public static final String FRAGMENTSHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
@@ -38,9 +38,12 @@ public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoF
             "    gl_FragColor = vec4(vec3(mag), 1.0f);\n" +
             "}";
 
+    public SobelEdgeDetectionHardVideoFilter() {
+        super(null, FRAGMENTSHADER);
+    }
+
     @Override
     public void onInit(int VWidth, int VHeight) {
-        fragmentshader_filter=FRAGMENTSHADER;
         super.onInit(VWidth, VHeight);
     }
 }

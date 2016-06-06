@@ -35,7 +35,7 @@ public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoF
             "    float h = -topLeftIntensity - 2.0 * topIntensity - topRightIntensity + bottomLeftIntensity + 2.0 * bottomIntensity + bottomRightIntensity;\n" +
             "    float v = -bottomLeftIntensity - 2.0 * leftIntensity - topLeftIntensity + bottomRightIntensity + 2.0 * rightIntensity + topRightIntensity;\n" +
             "    float mag = length(vec2(h, v));\n" +
-            "    gl_FragColor = vec4(vec3(mag), 1.0f);\n" +
+            "    gl_FragColor = vec4(vec3(mag), 1.0);\n" +
             "}";
 
     public SobelEdgeDetectionHardVideoFilter() {

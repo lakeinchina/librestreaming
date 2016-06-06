@@ -16,7 +16,7 @@ public class DifferenceBlendFilterHard extends TowInputFilterHard {
             "void main(){\n" +
             "   lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +
             "   lowp vec4 c2 = texture2D(uImageTexture, vImageTextureCoord);\n" +
-            "   gl_FragColor = vec4(abs(c1.rgb - c2.rgb), 1.0f);\n" +
+            "   gl_FragColor = vec4(abs(c1.rgb - c2.rgb), 1.0);\n" +
             "}";
 
     public DifferenceBlendFilterHard(Bitmap image) {

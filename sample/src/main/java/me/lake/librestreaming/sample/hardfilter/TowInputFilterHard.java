@@ -42,8 +42,8 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
             "void main(){\n" +
             "   lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +
             "   lowp vec4 c2 = texture2D(uImageTexture, vImageTextureCoord);\n" +
-            "   lowp vec4 outputColor = c2+c1*c1.a*(1.0f-c2.a);\n" +
-            "   outputColor.a = 1.0f;\n" +
+            "   lowp vec4 outputColor = c2+c1*c1.a*(1.0-c2.a);\n" +
+            "   outputColor.a = 1.0;\n" +
             "   gl_FragColor = outputColor;\n" +
             "}";
     protected static float texture2Vertices[] = {

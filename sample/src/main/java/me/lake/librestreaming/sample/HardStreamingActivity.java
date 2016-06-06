@@ -43,7 +43,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null,null)));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
-        filterItems.add(new FilterItem("FacialMakeUp",new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(),R.raw.skinblur))));
+        filterItems.add(new FilterItem("FacialMakeUp",new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(),R.raw.skinblurgl))));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("NormalBlend", new TowInputFilterHard(null,null,bitmap)));
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);

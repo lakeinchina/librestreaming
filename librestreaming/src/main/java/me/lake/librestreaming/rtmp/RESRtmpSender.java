@@ -157,12 +157,7 @@ public class RESRtmpSender {
                         ++errorTime;
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
-                                CallbackDelivery.i().post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        connectionListener.onWriteError(errorTime);
-                                    }
-                                });
+                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener,errorTime));
                             }
                         }
                     }

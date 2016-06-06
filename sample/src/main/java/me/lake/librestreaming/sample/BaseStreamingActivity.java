@@ -142,6 +142,10 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
 
     @Override
     public void onWriteError(int error) {
+        if (error == 100) {
+            resClient.stop();
+            resClient.start();
+        }
         /**
          * failed to write data,maybe restart.
          */

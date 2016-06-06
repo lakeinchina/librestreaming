@@ -82,7 +82,6 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
         }
         resConfig.setRtmpAddr("rtmp://10.57.8.120/live/livestream");
-        resConfig.setRtmpAddr("rtmp://upload.rtmp.kukuplay.com/live/a26c42ø");
 //        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
         if (!resClient.prepare(resConfig)) {
             resClient = null;

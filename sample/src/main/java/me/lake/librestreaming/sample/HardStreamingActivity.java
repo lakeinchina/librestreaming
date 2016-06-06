@@ -20,9 +20,11 @@ import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
+import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
+import me.lake.librestreaming.tools.GLESTools;
 
 /**
  * Created by lake on 16-5-31.
@@ -41,6 +43,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null,null)));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
+        filterItems.add(new FilterItem("FacialMakeUp",new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(),R.raw.skinblur))));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("NormalBlend", new TowInputFilterHard(null,null,bitmap)));
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);

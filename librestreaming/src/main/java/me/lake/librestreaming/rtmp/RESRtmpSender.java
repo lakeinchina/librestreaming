@@ -56,10 +56,10 @@ public class RESRtmpSender {
     public void destroy() {
         workHandler.removeCallbacksAndMessages(null);
         workHandlerThread.quit();
-        try {
-            workHandlerThread.join();
-        } catch (InterruptedException ignored) {
-        }
+//        try {
+//            workHandlerThread.join();
+//        } catch (InterruptedException ignored) {
+//        }
     }
 
     static class WorkHandler extends Handler {

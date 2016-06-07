@@ -26,6 +26,7 @@ import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
+import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
 import me.lake.librestreaming.tools.GLESTools;
 
 /**
@@ -46,10 +47,14 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null, null)));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
         filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(), R.raw.skinblurgl))));
+        filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));
+        LinkedList<BaseHardVideoFilter> filters = new LinkedList<>();
+        filters.add(new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(), R.raw.skinblurgl)));
+        filters.add(new WhiteningHardVideoFilter());
+        filterItems.add(new FilterItem("FacialUp", new HardVideoGroupFilter(filters)));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("NormalBlend", new TowInputFilterHard(null, null, bitmap)));
-        LinkedList<BaseHardVideoFilter> filters = new LinkedList<>();
-         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        filters = new LinkedList<>();
         filters.add(new SobelEdgeDetectionHardVideoFilter());
         filters.add(new FishEyeFilterHard());
         filterItems.add(new FilterItem("GroupFilter", new HardVideoGroupFilter(filters)));

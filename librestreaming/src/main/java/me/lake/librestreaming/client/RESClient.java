@@ -116,14 +116,17 @@ public class RESClient {
      */
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         videoClient.createPreview(surfaceTexture, visualWidth, visualHeight);
+        LogTools.d("RESClient,createPreview()");
     }
 
     public void updatePreview(int visualWidth, int visualHeight) {
         videoClient.updatePreview(visualWidth, visualHeight);
+        LogTools.d("RESClient,updatePreview()");
     }
 
     public void destroyPreview() {
         videoClient.destroyPreview();
+        LogTools.d("RESClient,destroyPreview()");
     }
 
     /**

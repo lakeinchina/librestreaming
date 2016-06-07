@@ -16,13 +16,13 @@ void main(){
     int x,y;
     highp float yf=yfS;
     highp float xf=xfS;
-    vec4 sum;
-    vec4 fact;
+    vec4 sum=vec4(0.0,0.0,0.0,0.0);
+    vec4 fact=vec4(0.0,0.0,0.0,0.0);
     vec4 tmp;
     vec4 rowsum;
     vec4 rowfact;
     vec4 color2;
-    float r,g,b;
+    float r=0.0,g=0.0,b=0.0;
     for(y=0;y<iD;y+=1){
         if (yf < 0.0 || yf > 1.0){
             yf+=(2.0*yStep);

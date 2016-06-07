@@ -178,8 +178,10 @@ public class RESHardVideoCore implements RESVideoCore {
                         synchronized (syncPreview) {
                             screenParams.surfaceTexture = null;
                         }
-                        videoGLThread.wakeup();
-                        syncScreenCleanUp.wait();
+                        if (!videoGLThread.screenCleaned) {
+                            videoGLThread.wakeup();
+                            syncScreenCleanUp.wait();
+                        }
                     } catch (InterruptedException ignored) {
                     }
                 }
@@ -213,6 +215,7 @@ public class RESHardVideoCore implements RESVideoCore {
         public static final int FILTER_LOCK_TOLERATION = 3;//3ms
         private boolean quit;
         private final Object syncThread = new Object();
+        public boolean screenCleaned = false;
         private int frameNum = 0;
         //gl stuff
         private Surface mediaInputSurface;
@@ -231,6 +234,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private BaseHardVideoFilter innerVideoFilter = null;
 
         VideoGLThread(SurfaceTexture camTexture, Surface inputSuface, int cameraIndex) {
+            screenCleaned = false;
             mediaInputSurface = inputSuface;
             cameraTexture = camTexture;
             screenGLWapper = null;
@@ -412,7 +416,7 @@ public class RESHardVideoCore implements RESVideoCore {
                     synchronized (syncScreenCleanUp) {
                         if (screenGLWapper != null) {
                             cleanUpScreen();
-                            screenGLWapper=null;
+                            screenGLWapper = null;
                         }
                         syncScreenCleanUp.notify();
                         if (screenGLWapper == null) {
@@ -421,6 +425,7 @@ public class RESHardVideoCore implements RESVideoCore {
                     }
                 }
                 if (screenGLWapper == null) {
+                    screenCleaned = false;
                     screenGLWapper = new ScreenGLWapper();
                     GLHelper.initScreenGL(screenGLWapper, mediaCodecGLWapper.eglContext, screenParams.surfaceTexture);
                     initScreenProgram(screenGLWapper);
@@ -489,6 +494,7 @@ public class RESHardVideoCore implements RESVideoCore {
         }
 
         private void cleanUpScreen() {
+            screenCleaned = true;
             GLHelper.currentScreen(screenGLWapper);
             GLES20.glDeleteProgram(screenGLWapper.drawProgram);
             EGL14.eglDestroySurface(screenGLWapper.eglDisplay, screenGLWapper.eglSurface);

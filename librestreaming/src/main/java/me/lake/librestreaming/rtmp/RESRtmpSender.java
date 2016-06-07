@@ -56,6 +56,9 @@ public class RESRtmpSender {
     public void destroy() {
         workHandler.removeCallbacksAndMessages(null);
         workHandlerThread.quit();
+        /**
+         * do not wait librtmp to quit
+         */
 //        try {
 //            workHandlerThread.join();
 //        } catch (InterruptedException ignored) {

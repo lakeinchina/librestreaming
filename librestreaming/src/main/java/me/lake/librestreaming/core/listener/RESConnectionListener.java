@@ -1,7 +1,5 @@
 package me.lake.librestreaming.core.listener;
 
-import android.graphics.Bitmap;
-
 /**
  * Created by lake on 16-4-11.
  */

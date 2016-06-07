@@ -222,6 +222,8 @@ public class RESHardVideoCore implements RESVideoCore {
         private SurfaceTexture cameraTexture;
         private MediaCodecGLWapper mediaCodecGLWapper;
         private ScreenGLWapper screenGLWapper;
+        private int sample2DFrameBuffer;
+        private int sample2DFrameBufferTexture;
         private int frameBuffer;
         private int frameBufferTexture;
         private FloatBuffer shapeVerticesBuffer;
@@ -229,6 +231,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private FloatBuffer screenTextureVerticesBuffer;
         private int currCamera;
         private final Object syncCameraTextureVerticesBuffer = new Object();
+        private FloatBuffer camera2dTextureVerticesBuffer;
         private FloatBuffer cameraTextureVerticesBuffer;
         private ShortBuffer drawIndecesBuffer;
         private BaseHardVideoFilter innerVideoFilter = null;
@@ -252,7 +255,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 } else {
                     directionFlag = resCoreParameters.backCameraDirectionMode;
                 }
-                cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer(directionFlag);
+                camera2dTextureVerticesBuffer = GLHelper.getCamera2DTextureVerticesBuffer(directionFlag);
             }
         }
 
@@ -285,6 +288,9 @@ public class RESHardVideoCore implements RESVideoCore {
             GLHelper.currentMediaCodec(mediaCodecGLWapper);
             int[] fb = new int[1], fbt = new int[1];
             GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            sample2DFrameBuffer = fb[0];
+            sample2DFrameBufferTexture = fbt[0];
+            GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
             initMediaCodecProgram(mediaCodecGLWapper);
             frameBuffer = fb[0];
             frameBufferTexture = fbt[0];
@@ -299,6 +305,7 @@ public class RESHardVideoCore implements RESVideoCore {
                         cameraTexture.updateTexImage();
                     }
                 }
+                drawSample2DFrameBuffer();
                 drawFrameBuffer();
                 drawMediaCodec();
                 drawScreen();
@@ -347,10 +354,30 @@ public class RESHardVideoCore implements RESVideoCore {
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawIndecesBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, drawIndecesBuffer);
         }
 
-        private void drawOriginFrameBuffer() {
-            GLES20.glUseProgram(mediaCodecGLWapper.camProgram);
+        private void drawSample2DFrameBuffer() {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, sample2DFrameBuffer);
+            GLES20.glUseProgram(mediaCodecGLWapper.cam2dProgram);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, OVERWATCH_TEXTURE_ID);
+            GLES20.glUniform1i(mediaCodecGLWapper.cam2dTextureLoc, 0);
+            synchronized (syncCameraTextureVerticesBuffer) {
+                GLHelper.enableVertex(mediaCodecGLWapper.cam2dPostionLoc, mediaCodecGLWapper.cam2dTextureCoordLoc,
+                        shapeVerticesBuffer, camera2dTextureVerticesBuffer);
+            }
+            GLES20.glViewport(0, 0, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            drawFrame();
+            GLES20.glFinish();
+            GLHelper.disableVertex(mediaCodecGLWapper.cam2dPostionLoc, mediaCodecGLWapper.cam2dTextureCoordLoc);
+            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+            GLES20.glUseProgram(0);
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        }
+
+        private void drawOriginFrameBuffer() {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer);
+            GLES20.glUseProgram(mediaCodecGLWapper.camProgram);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, sample2DFrameBufferTexture);
             GLES20.glUniform1i(mediaCodecGLWapper.camTextureLoc, 0);
             synchronized (syncCameraTextureVerticesBuffer) {
                 GLHelper.enableVertex(mediaCodecGLWapper.camPostionLoc, mediaCodecGLWapper.camTextureCoordLoc,
@@ -360,12 +387,12 @@ public class RESHardVideoCore implements RESVideoCore {
             drawFrame();
             GLES20.glFinish();
             GLHelper.disableVertex(mediaCodecGLWapper.camPostionLoc, mediaCodecGLWapper.camTextureCoordLoc);
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             GLES20.glUseProgram(0);
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
 
         private void drawFrameBuffer() {
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer);
             boolean isFilterLocked = lockVideoFilter();
             if (isFilterLocked) {
                 if (videoFilter != innerVideoFilter) {
@@ -379,7 +406,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 }
                 if (innerVideoFilter != null) {
                     synchronized (syncCameraTextureVerticesBuffer) {
-                        innerVideoFilter.onDraw(OVERWATCH_TEXTURE_ID, shapeVerticesBuffer, cameraTextureVerticesBuffer);
+                        innerVideoFilter.onDraw(sample2DFrameBufferTexture,frameBuffer, shapeVerticesBuffer, cameraTextureVerticesBuffer);
                     }
                 } else {
                     drawOriginFrameBuffer();
@@ -388,7 +415,6 @@ public class RESHardVideoCore implements RESVideoCore {
             } else {
                 drawOriginFrameBuffer();
             }
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
 
         private void drawMediaCodec() {
@@ -455,6 +481,7 @@ public class RESHardVideoCore implements RESVideoCore {
             screenTextureVerticesBuffer = GLHelper.getScreenTextureVerticesBuffer();
             updateCameraIndex(currCamera);
             drawIndecesBuffer = GLHelper.getDrawIndecesBuffer();
+            cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer();
         }
 
         private void initMediaCodecProgram(MediaCodecGLWapper wapper) {
@@ -471,6 +498,12 @@ public class RESHardVideoCore implements RESVideoCore {
             wapper.camTextureLoc = GLES20.glGetUniformLocation(wapper.camProgram, "uTexture");
             wapper.camPostionLoc = GLES20.glGetAttribLocation(wapper.camProgram, "aPosition");
             wapper.camTextureCoordLoc = GLES20.glGetAttribLocation(wapper.camProgram, "aTextureCoord");
+            //camera2d
+            wapper.cam2dProgram = GLHelper.createCamera2DProgram();
+            GLES20.glUseProgram(wapper.cam2dProgram);
+            wapper.cam2dTextureLoc = GLES20.glGetUniformLocation(wapper.cam2dProgram, "uTexture");
+            wapper.cam2dPostionLoc = GLES20.glGetAttribLocation(wapper.cam2dProgram, "aPosition");
+            wapper.cam2dTextureCoordLoc = GLES20.glGetAttribLocation(wapper.cam2dProgram, "aTextureCoord");
         }
 
         private void initScreenProgram(ScreenGLWapper wapper) {

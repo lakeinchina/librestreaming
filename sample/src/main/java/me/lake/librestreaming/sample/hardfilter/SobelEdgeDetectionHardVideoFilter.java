@@ -20,7 +20,7 @@ public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoF
             "varying vec2 bottomLeftTextureCoordinate;\n" +
             "varying vec2 bottomRightTextureCoordinate;\n" +
             "\n" +
-            "uniform samplerExternalOES uCamTexture;\n" +
+            "uniform sampler2D uCamTexture;\n" +
             "\n" +
             "void main()\n" +
             "{\n" +

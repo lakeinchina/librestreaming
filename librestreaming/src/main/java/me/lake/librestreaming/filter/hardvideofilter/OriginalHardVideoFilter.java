@@ -2,7 +2,6 @@ package me.lake.librestreaming.filter.hardvideofilter;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.util.Log;
 
 import java.nio.FloatBuffer;
 
@@ -25,10 +24,9 @@ public class OriginalHardVideoFilter extends BaseHardVideoFilter {
             "    vCamTextureCoord = aCamTextureCoord;\n" +
             "}";
     protected String fragmentshader_filter = "" +
-            "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
             "varying mediump vec2 vCamTextureCoord;\n" +
-            "uniform samplerExternalOES uCamTexture;\n" +
+            "uniform sampler2D uCamTexture;\n" +
             "void main(){\n" +
             "    vec4  color = texture2D(uCamTexture, vCamTextureCoord);\n" +
             "    gl_FragColor = color;\n" +
@@ -53,11 +51,13 @@ public class OriginalHardVideoFilter extends BaseHardVideoFilter {
         glCamTextureCoordLoc = GLES20.glGetAttribLocation(glProgram, "aCamTextureCoord");
     }
 
+
     @Override
-    public void onDraw(int cameraTexture, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+    public void onDraw(int cameraTexture, int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, targetFrameBuffer);
         GLES20.glUseProgram(glProgram);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, cameraTexture);
         GLES20.glUniform1i(glTextureLoc, 0);
         GLES20.glEnableVertexAttribArray(glCamPostionLoc);
         GLES20.glEnableVertexAttribArray(glCamTextureCoordLoc);
@@ -73,15 +73,14 @@ public class OriginalHardVideoFilter extends BaseHardVideoFilter {
         GLES20.glViewport(0, 0, SIZE_WIDTH, SIZE_HEIGHT);
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        long a= System.currentTimeMillis();
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawIndecesBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, drawIndecesBuffer);
         GLES20.glFinish();
-        Log.e("aa","gg="+(System.currentTimeMillis()-a));
         onAfterDraw();
         GLES20.glDisableVertexAttribArray(glCamPostionLoc);
         GLES20.glDisableVertexAttribArray(glCamTextureCoordLoc);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         GLES20.glUseProgram(0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
     protected void onPreDraw() {

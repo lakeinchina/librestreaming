@@ -9,7 +9,7 @@ public class FishEyeFilterHard extends OriginalHardVideoFilter {
     private static String FRAGMENTSHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
-            "uniform samplerExternalOES uCamTexture;\n" +
+            "uniform sampler2D uCamTexture;\n" +
             "varying mediump vec2 vCamTextureCoord;\n" +
             "const mediump float PI = 3.1415926535;\n" +
             "const mediump float aperture = 180.0;\n" +

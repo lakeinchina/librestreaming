@@ -14,6 +14,11 @@ public class MediaCodecGLWapper {
     public EGLSurface eglSurface;
     public EGLContext eglContext;
 
+    public int cam2dProgram;
+    public int cam2dTextureLoc;
+    public int cam2dPostionLoc;
+    public int cam2dTextureCoordLoc;
+
     public int camProgram;
     public int camTextureLoc;
     public int camPostionLoc;

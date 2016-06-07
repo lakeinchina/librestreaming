@@ -1,8 +1,5 @@
 package me.lake.librestreaming.filter.hardvideofilter;
 
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
-
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
@@ -20,10 +17,9 @@ public class BaseHardVideoFilter {
         SIZE_WIDTH = VWidth;
         SIZE_HEIGHT = VHeight;
         drawIndecesBuffer = GLHelper.getDrawIndecesBuffer();
-        GLES20.glEnable(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     }
 
-    public void onDraw(final int cameraTexture, final FloatBuffer shapeBuffer, final FloatBuffer textrueBuffer) {
+    public void onDraw(final int cameraTexture,final int targetFrameBuffer, final FloatBuffer shapeBuffer, final FloatBuffer textrueBuffer) {
     }
 
     public void onDestroy() {

@@ -88,11 +88,11 @@ public class Base3x3SamplingHardVideoFilter extends BaseHardVideoFilter {
     }
 
     @Override
-    public void onDraw(int cameraTexture, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
-        super.onDraw(cameraTexture, shapeBuffer, textrueBuffer);
+    public void onDraw(int cameraTexture, int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, targetFrameBuffer);
         GLES20.glUseProgram(glProgram);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, cameraTexture);
         GLES20.glUniform1f(mUniformTexelWidthLocation, mTexelWidth);
         GLES20.glUniform1f(mUniformTexelHeightLocation, mTexelHeight);
         GLES20.glUniform1i(glTextureLoc, 0);
@@ -115,6 +115,7 @@ public class Base3x3SamplingHardVideoFilter extends BaseHardVideoFilter {
         GLES20.glDisableVertexAttribArray(glCamTextureCoordLoc);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         GLES20.glUseProgram(0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
     @Override

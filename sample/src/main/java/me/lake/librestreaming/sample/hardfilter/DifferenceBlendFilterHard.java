@@ -11,7 +11,7 @@ public class DifferenceBlendFilterHard extends TowInputFilterHard {
             "precision mediump float;\n" +
             "varying mediump vec2 vCamTextureCoord;\n" +
             "varying mediump vec2 vImageTextureCoord;\n" +
-            "uniform samplerExternalOES uCamTexture;\n" +
+            "uniform sampler2D uCamTexture;\n" +
             "uniform sampler2D uImageTexture;\n" +
             "void main(){\n" +
             "   lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +

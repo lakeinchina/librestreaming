@@ -33,11 +33,10 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
             "   vImageTextureCoord = aImageTextureCoord;\n" +
             "}";
     protected String fragmentshader_filter = "" +
-            "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
             "varying mediump vec2 vCamTextureCoord;\n" +
             "varying mediump vec2 vImageTextureCoord;\n" +
-            "uniform samplerExternalOES uCamTexture;\n" +
+            "uniform sampler2D uCamTexture;\n" +
             "uniform sampler2D uImageTexture;\n" +
             "void main(){\n" +
             "   lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +
@@ -85,10 +84,11 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
     }
 
     @Override
-    public void onDraw(int cameraTexture, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+    public void onDraw(int cameraTexture, int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, targetFrameBuffer);
         GLES20.glUseProgram(glProgram);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, cameraTexture);
         GLES20.glUniform1i(glCamTextureLoc, 0);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, imageTexture);
@@ -117,6 +117,7 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
         GLES20.glDisableVertexAttribArray(glCamTextureCoordLoc);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         GLES20.glUseProgram(0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
     @Override

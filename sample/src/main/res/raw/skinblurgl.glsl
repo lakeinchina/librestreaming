@@ -1,6 +1,6 @@
 #extension GL_OES_EGL_image_external : require
 precision mediump float;
-uniform samplerExternalOES uCamTexture;
+uniform sampler2D uCamTexture;
 varying mediump vec2 vCamTextureCoord;
 const highp float R = 4.0;
 const int iD = 5;

@@ -83,6 +83,19 @@ public class RESSoftVideoCore implements RESVideoCore {
     }
 
     public void setCurrentCamera(int camIndex) {
+        if (currentCamera != camIndex) {
+            synchronized (syncOp) {
+                if (videoFilterHandler != null) {
+                    videoFilterHandler.removeCallbacksAndMessages(null);
+                }
+                if (orignVideoBuffs != null) {
+                    for (RESVideoBuff buff : orignVideoBuffs) {
+                        buff.isReadyToFill = true;
+                    }
+                    lastVideoQueueBuffIndex = 0;
+                }
+            }
+        }
         currentCamera = camIndex;
     }
 

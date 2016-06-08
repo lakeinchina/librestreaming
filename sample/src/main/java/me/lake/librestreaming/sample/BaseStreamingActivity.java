@@ -37,6 +37,7 @@ import me.lake.librestreaming.model.Size;
 public class BaseStreamingActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener {
     private static final String TAG = "RES";
     public static final String DIRECTION = "direction";
+    public static final String RTMPADDR = "rtmpaddr";
     protected RESClient resClient;
     protected TextureView txv_preview;
     protected ListView lv_filter;
@@ -47,6 +48,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
+    protected String rtmpaddr = "rtmp://10.57.8.120/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override
@@ -56,6 +58,9 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+        if (i.getStringExtra(RTMPADDR) != null) {
+            rtmpaddr = i.getStringExtra(RTMPADDR);
         }
         started = false;
         super.onCreate(savedInstanceState);
@@ -81,8 +86,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         } else {
             resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
         }
-        resConfig.setRtmpAddr("rtmp://10.57.8.120/live/livestream");
-//        resConfig.setRtmpAddr("rtmp://10.57.9.190/live/test");
+        resConfig.setRtmpAddr(rtmpaddr);
         if (!resClient.prepare(resConfig)) {
             resClient = null;
             Log.e(TAG, "prepare,failed!!");
@@ -109,8 +113,6 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
 
     @Override
     protected void onResume() {
-//        resClient.start();
-//        started=true;
         super.onResume();
     }
 

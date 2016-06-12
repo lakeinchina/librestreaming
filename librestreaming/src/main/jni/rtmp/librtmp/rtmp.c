@@ -28,6 +28,8 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#include <fcntl.h>
+#include "../log.h"
 
 #include "rtmp_sys.h"
 #include "log.h"
@@ -896,6 +898,31 @@ finish:
     free(hostname);
   return ret;
 }
+//lake modified
+#define CONNECT_TIME_OUT 10//second
+void setNoBlock(int sb_socket,int enbale){
+    int flags;
+    if(enbale==0){
+    	if((flags = fcntl(sb_socket, F_GETFL)) < 0){
+    		LOGD("setNoBlock F_GETFL error!\n");
+    		return;
+    	}
+    	flags |= O_NONBLOCK;
+    	if(fcntl(sb_socket, F_SETFL, flags) < 0){
+    		printf("setNoBlock F_SETFL error!\n");
+    		return;
+    	}
+    }else{
+        flags;
+        if((flags = fcntl(sb_socket, F_GETFL)) < 0){
+            printf("F_GETFL error!\n");
+        }
+        flags &= ~O_NONBLOCK;
+        if(fcntl(sb_socket, F_SETFL, flags) < 0){
+        	printf("F_SETFL error!\n");
+        }
+    }
+}
 
 int
 RTMP_Connect0(RTMP *r, struct sockaddr * service)
@@ -908,14 +935,32 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
   r->m_sb.sb_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (r->m_sb.sb_socket != -1)
     {
-      if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr)) < 0)
-	{
-	  int err = GetSockError();
-	  RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket. %d (%s)",
-	      __FUNCTION__, err, strerror(err));
-	  RTMP_Close(r);
-	  return FALSE;
-	}
+        setNoBlock(r->m_sb.sb_socket,0);
+        if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr)) != 0){
+            fd_set wfd;
+    		FD_ZERO(&wfd);
+    		FD_SET(r->m_sb.sb_socket, &wfd);
+    		struct timeval toptr  = {CONNECT_TIME_OUT,0};
+    		int res= select(FD_SETSIZE, NULL, &wfd, NULL, &toptr);
+    		if (res < 0) {
+    		    LOGD("select failed!");
+    		    RTMP_Close(r);
+    		    return FALSE;
+    		}else if (res == 0) {
+    		    LOGD("connect timeout!");
+    		    RTMP_Close(r);
+    		    return FALSE;
+    		}else{
+    			int error=0;
+    			getsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_ERROR, &error, sizeof(int));
+    			if(error!=0){
+    			    LOGD("connect failed=%d!",error);
+    				return FALSE;
+    			}
+    		}
+        }
+        setNoBlock(r->m_sb.sb_socket,1);
+        LOGD("connect success!");
 
       if (r->Link.socksport)
 	{

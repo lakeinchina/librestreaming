@@ -48,7 +48,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
-    protected String rtmpaddr = "rtmp://10.57.8.120/live/livestream";
+    protected String rtmpaddr = "rtmp://10.57.8.116/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override
@@ -59,7 +59,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
-        if (i.getStringExtra(RTMPADDR) != null) {
+        if (i.getStringExtra(RTMPADDR) != null && !i.getStringExtra(RTMPADDR).isEmpty()) {
             rtmpaddr = i.getStringExtra(RTMPADDR);
         }
         started = false;

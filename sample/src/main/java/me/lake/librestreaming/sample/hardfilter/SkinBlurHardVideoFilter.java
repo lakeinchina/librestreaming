@@ -25,7 +25,7 @@ public class SkinBlurHardVideoFilter extends OriginalHardVideoFilter {
     @Override
     protected void onPreDraw() {
         super.onPreDraw();
-        GLES20.glUniform1f(xStepLoc, (float) (1.0 / SIZE_WIDTH));
-        GLES20.glUniform1f(yStepLoc, (float) (1.0 / SIZE_HEIGHT));
+        GLES20.glUniform1f(xStepLoc, (float) (2.0 / SIZE_WIDTH));
+        GLES20.glUniform1f(yStepLoc, (float) (2.0 / SIZE_HEIGHT));
     }
 }

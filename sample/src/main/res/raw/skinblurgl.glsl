@@ -2,30 +2,36 @@
 precision mediump float;
 uniform sampler2D uCamTexture;
 varying mediump vec2 vCamTextureCoord;
-const highp float R = 4.0;
+const lowp float R = 4.0;
 const int iD = 5;
 const float maxdelta = 0.08;
-uniform highp float xStep;
-uniform highp float yStep;
+uniform mediump float xStep;
+uniform mediump float yStep;
+const mediump mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);
 void main(){
     vec4 color = texture2D(uCamTexture,vCamTextureCoord);
-    highp float xStart;
-    highp float yStart;
-    highp float xfS = vCamTextureCoord.x - xStep*R;
-    highp float yfS = vCamTextureCoord.y - yStep*R;
+    vec3 yuv = rgb2yuv*color.rgb;
+    if(yuv.g<-0.225 || yuv.g>0.0 || yuv.b<0.022 || yuv.b>0.206){
+        gl_FragColor = color;
+        return;
+    }
+    float xStart;
+    float yStart;
+    float xfS = vCamTextureCoord.x - (xStep/2.0)*R;
+    float yfS = vCamTextureCoord.y - (yStep/2.0)*R;
     int x,y;
-    highp float yf=yfS;
-    highp float xf=xfS;
-    vec4 sum=vec4(0.0,0.0,0.0,0.0);
-    vec4 fact=vec4(0.0,0.0,0.0,0.0);
-    vec4 tmp;
-    vec4 rowsum;
-    vec4 rowfact;
-    vec4 color2;
-    float r=0.0,g=0.0,b=0.0;
+    float yf=yfS;
+    float xf=xfS;
+    lowp vec4 sum=vec4(0.0,0.0,0.0,0.0);
+    lowp vec4 fact=vec4(0.0,0.0,0.0,0.0);
+    lowp vec4 tmp;
+    lowp vec4 rowsum;
+    lowp vec4 rowfact;
+    lowp vec4 color2;
+    lowp float r=0.0,g=0.0,b=0.0;
     for(y=0;y<iD;y+=1){
         if (yf < 0.0 || yf > 1.0){
-            yf+=(2.0*yStep);
+            yf+=yStep;
             continue;
         }
         rowsum.r=0.0;
@@ -36,7 +42,7 @@ void main(){
         rowfact.b=0.0;
         for(x=0;x<iD;x+=1){
             if (xf < 0.0 || xf > 1.0){
-                xf+=(2.0*xStep);
+                xf+=xStep;
                 continue;
             }
             color2 = texture2D(uCamTexture,vec2(xf,yf));
@@ -53,11 +59,11 @@ void main(){
                 rowsum.b += color2.b;
                 rowfact.b +=1.0;
             }
-            xf+=(2.0*xStep);
+            xf+=xStep;
         }
         sum+=rowsum;
         fact+=rowfact;
-        yf+=(2.0*yStep);
+        yf+=yStep;
         xf=xfS;
     }
     vec4 res = sum/fact;

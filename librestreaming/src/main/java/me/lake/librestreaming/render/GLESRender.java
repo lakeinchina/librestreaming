@@ -109,8 +109,8 @@ public class GLESRender implements IRender {
         }
 
         public void quit() {
-            quit = true;
             synchronized (syncThread) {
+                quit = true;
                 syncThread.notify();
             }
         }
@@ -148,7 +148,9 @@ public class GLESRender implements IRender {
                 }
                 synchronized (syncThread) {
                     try {
-                        syncThread.wait();
+                        if(!quit) {
+                            syncThread.wait();
+                        }
                     } catch (InterruptedException ignored) {
                     }
                 }

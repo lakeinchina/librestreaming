@@ -105,8 +105,6 @@ public class RESSoftVideoCore implements RESVideoCore {
             resCoreParameters.renderingMode = resConfig.getRenderingMode();
             resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
             resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-            resCoreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
-            resCoreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
             resCoreParameters.mediacodecAVCFrameRate = 30;
             resCoreParameters.mediacodecAVCIFrameInterval = 5;
             dstVideoFormat = new MediaFormat();

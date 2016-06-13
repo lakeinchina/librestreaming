@@ -129,6 +129,7 @@ public class RESRtmpSender {
                     if (state == STATE.STOPPED ||  jniRtmpPointer==0) {
                         break;
                     }
+                    errorTime=0;
                     final int closeR = RtmpClient.close(jniRtmpPointer);
                     synchronized (syncConnectionListener) {
                         if (connectionListener != null) {

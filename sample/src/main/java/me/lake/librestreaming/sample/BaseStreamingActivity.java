@@ -28,8 +28,10 @@ import java.io.OutputStream;
 import me.lake.librestreaming.client.RESClient;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.Size;
+import me.lake.librestreaming.sample.audiofilter.SetVolumeAudioFilter;
 
 /**
  * Created by lake on 16-5-31.
@@ -43,6 +45,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected ListView lv_filter;
     protected SeekBar sb_attr;
     protected SeekBar sb_zoom;
+    protected SeekBar sb_volume;
     protected TextView tv_speed;
     protected TextView tv_rtmp;
     protected Handler mainHander;
@@ -69,6 +72,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         lv_filter = (ListView) findViewById(R.id.lv_filter);
         sb_attr = (SeekBar) findViewById(R.id.sb_attr);
         sb_zoom = (SeekBar) findViewById(R.id.sb_zoom);
+        sb_volume = (SeekBar) findViewById(R.id.sb_volume);
         tv_speed = (TextView) findViewById(R.id.tv_speed);
         tv_rtmp = (TextView) findViewById(R.id.tv_rtmp);
         txv_preview.setKeepScreenOn(true);
@@ -112,6 +116,48 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             }
         };
         mainHander.sendEmptyMessageDelayed(0, 3000);
+
+        resClient.setSoftAudioFilter(new SetVolumeAudioFilter());
+        sb_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                resClient.setZoomByPercent(progress / 100.0f);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+        sb_volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                BaseSoftAudioFilter audioFilter = resClient.acquireSoftAudioFilter();
+                if (audioFilter != null) {
+                    if (audioFilter instanceof SetVolumeAudioFilter) {
+                        SetVolumeAudioFilter blackWhiteFilter = (SetVolumeAudioFilter) audioFilter;
+                        blackWhiteFilter.setVolumeScale((float) (progress / 10.0));
+                    }
+                }
+                resClient.releaseSoftAudioFilter();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+        sb_volume.setProgress(10);
     }
 
 

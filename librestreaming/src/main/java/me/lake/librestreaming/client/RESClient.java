@@ -6,6 +6,7 @@ import android.graphics.SurfaceTexture;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
+import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
@@ -205,6 +206,34 @@ public class RESClient {
      */
     public void setHardVideoFilter(BaseHardVideoFilter baseHardVideoFilter) {
         videoClient.setHardVideoFilter(baseHardVideoFilter);
+    }
+
+    /**
+     * set audiofilter.<br/>
+     * can be called Repeatedly.<br/>
+     * do NOT call it between {@link #acquireSoftAudioFilter()} & {@link #releaseSoftAudioFilter()}
+     *
+     * @param baseSoftAudioFilter audiofilter to apply
+     */
+    public void setSoftAudioFilter(BaseSoftAudioFilter baseSoftAudioFilter) {
+        audioClient.setSoftAudioFilter(baseSoftAudioFilter);
+    }
+    /**
+     * use it to update filter property.<br/>
+     * call it with {@link #releaseSoftAudioFilter()}<br/>
+     * make sure to release it in 3ms
+     *
+     * @return the audiofilter in use
+     */
+    public BaseSoftAudioFilter acquireSoftAudioFilter() {
+        return audioClient.acquireSoftAudioFilter();
+    }
+
+    /**
+     * call it with {@link #acquireSoftAudioFilter()}
+     */
+    public void releaseSoftAudioFilter() {
+        audioClient.releaseSoftAudioFilter();
     }
 
     /**

@@ -15,8 +15,10 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
+import me.lake.librestreaming.sample.audiofilter.SetVolumeAudioFilter;
 import me.lake.librestreaming.sample.softfilter.AnimationFilterSoft;
 import me.lake.librestreaming.sample.softfilter.BlackWhiteFilterSoft;
 import me.lake.librestreaming.sample.softfilter.BlurFilterSoft;
@@ -99,22 +101,6 @@ public class SoftStreamingActivity extends BaseStreamingActivity {
                     }
                 }
                 resClient.releaseSoftVideoFilter();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        sb_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                resClient.setZoomByPercent(progress / 100.0f);
             }
 
             @Override

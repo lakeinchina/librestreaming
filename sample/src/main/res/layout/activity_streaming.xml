@@ -73,6 +73,22 @@
                 android:layout_gravity="bottom"
                 android:indeterminate="false"
                 android:padding="10dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="volume"/>
+                <SeekBar
+                    android:id="@+id/sb_volume"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top"
+                    android:indeterminate="false"
+                    android:padding="10dp" />
+            </LinearLayout>
         </FrameLayout>
 
     </LinearLayout>

@@ -5,6 +5,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
 import me.lake.librestreaming.core.RESSoftAudioCore;
+import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
@@ -74,6 +75,16 @@ public class RESAudioClient {
             audioRecord.release();
             return true;
         }
+    }
+    public void setSoftAudioFilter(BaseSoftAudioFilter baseSoftAudioFilter) {
+        softAudioCore.setAudioFilter(baseSoftAudioFilter);
+    }
+    public BaseSoftAudioFilter acquireSoftAudioFilter() {
+        return softAudioCore.acquireAudioFilter();
+    }
+
+    public void releaseSoftAudioFilter() {
+        softAudioCore.releaseAudioFilter();
     }
 
     private boolean prepareAudio() {

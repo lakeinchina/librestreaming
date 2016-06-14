@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.opengl.EGL14;
 import android.opengl.EGLExt;

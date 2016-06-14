@@ -27,7 +27,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Adjust your filter properties between acquireHardVideoFilter and releaseHardVideoFilter, call releaseHardVideoFilter as soon as operation finished (after acquireHardVideoFilter), interval better be less than 3ms
 
 ### Start/stop recording and streaming:
-
+```java
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         ... ...
@@ -59,18 +59,20 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
         super.onDestroy();
         resClient.destroy();
     }
+```
 
 ### Set recording direction:
-
+```java
     if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
         resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
         resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
     } else {
         resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
     }
+```
 
 ### Add filter:
-
+```java
     BlackWhiteSoftFilter bwsFilter = new BlackWhiteSoftFilter();
     resClient.setSoftVideoFilter(bwsFilter);
     BaseSoftVideoFilter filter = resClient.acquireSoftVideoFilter();
@@ -81,8 +83,9 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
         }
     ... ...
     resClient.releaseSoftVideoFilter();
+```
 
-####For more information, please checkout sample code in [me.lake.librestreaming.sample.softfilter](https://github.com/lakeinchina/librestreaming/tree/master/sample/src/main/java/me/lake/librestreaming/sample/softfilter) and [me.lake.librestreaming.sample.hardfilter](https://github.com/lakeinchina/librestreaming/tree/master/sample/src/main/java/me/lake/librestreaming/sample/hardfilter).
+#### For more information, please checkout sample code in [me.lake.librestreaming.sample.softfilter](https://github.com/lakeinchina/librestreaming/tree/master/sample/src/main/java/me/lake/librestreaming/sample/softfilter) and [me.lake.librestreaming.sample.hardfilter](https://github.com/lakeinchina/librestreaming/tree/master/sample/src/main/java/me/lake/librestreaming/sample/hardfilter).
 
 ### 简介：
 - 支持cpu滤镜和gpu滤镜。
@@ -94,9 +97,6 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - 支持gpu滤镜，并可以通过opengles绘制图像纹理来自定义滤镜。
 - 前后摄像头快速切换，不会打断推流。
 - 可以选择图像大小，码流比特率，具体取决于设备支持。
-
-### TODO：
-- 音频滤镜支持。
 
 
 ### 关于滤镜：
@@ -119,7 +119,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - 在acquireHardVideoFilter和releaseHardVideoFilter之间可以安全的修改滤镜的属性。不要持有滤镜超过3毫秒。
 
 
-###关于硬编码(mediacodec)：
+### 关于硬编码(mediacodec)：
 
 - 软模式下使用buffer to buffer。
 - 硬模式下使用surface to surface。

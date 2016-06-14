@@ -339,7 +339,9 @@ public class RESHardVideoCore implements RESVideoCore {
                 }
                 if (frameNum == 0) {
                     try {
-                        syncThread.wait();
+                        if (!quit) {
+                            syncThread.wait();
+                        }
                     } catch (InterruptedException ignored) {
                     }
                 }

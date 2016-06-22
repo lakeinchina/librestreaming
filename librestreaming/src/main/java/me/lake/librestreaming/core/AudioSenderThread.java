@@ -87,7 +87,7 @@ public class AudioSenderThread extends Thread {
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;
         resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
-        dataCollecter.collect(resFlvData, RESRtmpSender.FROM_AUDIO);
+        dataCollecter.collect(resFlvData);
     }
 
     private void sendRealData(long tms, ByteBuffer realData) {
@@ -104,6 +104,6 @@ public class AudioSenderThread extends Thread {
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;
         resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
-        dataCollecter.collect(resFlvData, RESRtmpSender.FROM_AUDIO);
+        dataCollecter.collect(resFlvData);
     }
 }

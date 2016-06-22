@@ -1,5 +1,7 @@
 package me.lake.librestreaming.rtmp;
 
+import java.util.Comparator;
+
 /**
  * Created by lake on 16-3-16.
  */
@@ -22,6 +24,22 @@ public class RESFlvData {
 
     public boolean isKeyframe() {
         return videoFrameType == NALU_TYPE_IDR;
+    }
+
+    public static class RESFlvDataDtsComparator implements Comparator<RESFlvData> {
+        @Override
+        public int compare(RESFlvData lhs, RESFlvData rhs) {
+            if (lhs.dts < rhs.dts) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return false;
+        }
     }
 
 }

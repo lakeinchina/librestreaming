@@ -4,6 +4,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
+
+import java.util.LinkedList;
+import java.util.TreeSet;
 
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.RESByteSpeedometer;
@@ -15,11 +19,11 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lake on 16-4-8.
  */
 public class RESRtmpSender {
+    public static final int VIDEO_DTS_TOLERATION = 2;
     private static final int TIMEGRANULARITY = 3000;
-    public static final int FROM_AUDIO = 8;
-    public static final int FROM_VIDEO = 6;
     private WorkHandler workHandler;
     private HandlerThread workHandlerThread;
+    private LinkedList<RESFlvData> videoFixSet;
 
     public void prepare(RESCoreParameters coreParameters) {
         workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
@@ -27,6 +31,7 @@ public class RESRtmpSender {
         workHandler = new WorkHandler(coreParameters.senderQueueLength,
                 new FLvMetaData(coreParameters),
                 workHandlerThread.getLooper());
+        videoFixSet = new LinkedList<>();
     }
 
     public void setConnectionListener(RESConnectionListener connectionListener) {
@@ -37,8 +42,37 @@ public class RESRtmpSender {
         workHandler.sendStart(rtmpAddr);
     }
 
-    public void feed(RESFlvData flvData, int type) {
-        workHandler.sendFood(flvData, type);
+    public void feed(RESFlvData flvData) {
+        if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
+            if (flvData.dts != 0) {
+                if (flvData.videoFrameType == 5) {
+                    videoFixSet.clear();
+                    Log.e("aa", "type0=" + flvData.dts);
+                    workHandler.sendFood(flvData);
+                } else {
+                    videoFixSet.add(flvData);
+                    if (videoFixSet.size() == VIDEO_DTS_TOLERATION) {
+                        RESFlvData i1 = videoFixSet.pollFirst();
+                        RESFlvData i2 = videoFixSet.pollFirst();
+                        Log.e("aa", "type1=" + i1.dts + "type2=" + i2.dts);
+                        if (i1.dts > i2.dts) {
+                            Log.e("aa", "swap,type1=" + i1.dts + "type2=" + i2.dts);
+                            int t = i1.dts;
+                            i1.dts = i2.dts;
+                            i2.dts = t;
+                        }
+                        videoFixSet.poll();
+                        videoFixSet.poll();
+                        workHandler.sendFood(i1);
+                        workHandler.sendFood(i2);
+                    }
+                }
+            } else {
+                workHandler.sendFood(flvData);
+            }
+        } else {
+            workHandler.sendFood(flvData);
+        }
     }
 
     public void stop() {
@@ -77,7 +111,7 @@ public class RESRtmpSender {
         private FLvMetaData fLvMetaData;
         private RESConnectionListener connectionListener;
         private final Object syncConnectionListener = new Object();
-        private int errorTime=0;
+        private int errorTime = 0;
 
         private enum STATE {
             IDLE,
@@ -126,10 +160,10 @@ public class RESRtmpSender {
                     }
                     break;
                 case MSG_STOP:
-                    if (state == STATE.STOPPED ||  jniRtmpPointer==0) {
+                    if (state == STATE.STOPPED || jniRtmpPointer == 0) {
                         break;
                     }
-                    errorTime=0;
+                    errorTime = 0;
                     final int closeR = RtmpClient.close(jniRtmpPointer);
                     synchronized (syncConnectionListener) {
                         if (connectionListener != null) {
@@ -151,7 +185,7 @@ public class RESRtmpSender {
                     RESFlvData flvData = (RESFlvData) msg.obj;
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res != 0) {
-                        errorTime=0;
+                        errorTime = 0;
                         if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
                         } else {
@@ -161,7 +195,7 @@ public class RESRtmpSender {
                         ++errorTime;
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
-                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener,errorTime));
+                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, errorTime));
                             }
                         }
                     }
@@ -183,14 +217,14 @@ public class RESRtmpSender {
             this.sendEmptyMessage(MSG_STOP);
         }
 
-        public void sendFood(RESFlvData flvData, int type) {
+        public void sendFood(RESFlvData flvData) {
             //LAKETODO optimize
             if (writeMsgNum <= maxQueueLength) {
-                this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
+                this.sendMessage(this.obtainMessage(MSG_WRITE, 0, 0, flvData));
                 ++writeMsgNum;
             } else {
                 if (flvData.isKeyframe()) {
-                    this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
+                    this.sendMessage(this.obtainMessage(MSG_WRITE, 0, 0, flvData));
                     ++writeMsgNum;
                 } else {
                     LogTools.d("senderQueue is full,abandon");

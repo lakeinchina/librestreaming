@@ -2,12 +2,12 @@ package me.lake.librestreaming.core;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 
 import me.lake.librestreaming.rtmp.RESFlvData;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
-import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -91,10 +91,11 @@ public class VideoSenderThread extends Thread {
         resFlvData.dts = (int) tms;
         resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
         resFlvData.videoFrameType = RESFlvData.NALU_TYPE_IDR;
-        dataCollecter.collect(resFlvData, RESRtmpSender.FROM_VIDEO);
+        dataCollecter.collect(resFlvData);
     }
 
     private void sendRealData(long tms, ByteBuffer realData) {
+        Log.e("aa","tms"+tms);
         int realDataLength = realData.remaining();
         int packetLen = Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH +
                 Packager.FLVPackager.NALU_HEADER_LENGTH +
@@ -116,6 +117,6 @@ public class VideoSenderThread extends Thread {
         resFlvData.dts = (int) tms;
         resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
         resFlvData.videoFrameType = frameType;
-        dataCollecter.collect(resFlvData, RESRtmpSender.FROM_VIDEO);
+        dataCollecter.collect(resFlvData);
     }
 }

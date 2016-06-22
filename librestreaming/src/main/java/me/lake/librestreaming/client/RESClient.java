@@ -62,8 +62,8 @@ public class RESClient {
             rtmpSender.prepare(coreParameters);
             dataCollecter = new RESFlvDataCollecter() {
                 @Override
-                public void collect(RESFlvData flvData, int type) {
-                    rtmpSender.feed(flvData, type);
+                public void collect(RESFlvData flvData) {
+                    rtmpSender.feed(flvData);
                 }
             };
             coreParameters.done = true;

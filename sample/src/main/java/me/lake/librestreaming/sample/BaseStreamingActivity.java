@@ -51,7 +51,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
-    protected String rtmpaddr = "rtmp://10.57.8.116/live/livestream";
+    protected String rtmpaddr = "rtmp://10.57.9.35/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override
@@ -114,7 +114,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         mainHander = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                tv_speed.setText("speed=" + (resClient.getAVSpeed() / 1024) + ";");
+                tv_speed.setText("byteSpeed=" + (resClient.getAVSpeed() / 1024) + ";drawFPS=" + resClient.getDrawFrameRate() + ";sendFPS=" + resClient.getSendFrameRate());
                 sendEmptyMessageDelayed(0, 3000);
             }
         };
@@ -176,14 +176,14 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
 
     @Override
     protected void onDestroy() {
+        if (mainHander != null) {
+            mainHander.removeCallbacksAndMessages(null);
+        }
         if (started) {
             resClient.stop();
         }
         if (resClient != null) {
             resClient.destroy();
-        }
-        if (mainHander != null) {
-            mainHander.removeCallbacksAndMessages(null);
         }
         super.onDestroy();
     }

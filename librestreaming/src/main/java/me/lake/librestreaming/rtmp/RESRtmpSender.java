@@ -7,6 +7,7 @@ import android.os.Message;
 
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.RESByteSpeedometer;
+import me.lake.librestreaming.core.RESFrameRateMeter;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.tools.LogTools;
@@ -20,57 +21,76 @@ public class RESRtmpSender {
     public static final int FROM_VIDEO = 6;
     private WorkHandler workHandler;
     private HandlerThread workHandlerThread;
+    private final Object syncOp = new Object();
 
     public void prepare(RESCoreParameters coreParameters) {
-        workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
-        workHandlerThread.start();
-        workHandler = new WorkHandler(coreParameters.senderQueueLength,
-                new FLvMetaData(coreParameters),
-                workHandlerThread.getLooper());
+        synchronized (syncOp) {
+            workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
+            workHandlerThread.start();
+            workHandler = new WorkHandler(coreParameters.senderQueueLength,
+                    new FLvMetaData(coreParameters),
+                    workHandlerThread.getLooper());
+        }
     }
 
     public void setConnectionListener(RESConnectionListener connectionListener) {
-        workHandler.setConnectionListener(connectionListener);
+        synchronized (syncOp) {
+            workHandler.setConnectionListener(connectionListener);
+        }
     }
 
     public String getServerIpAddr() {
-        if (workHandler != null) {
-            return workHandler.getServerIpAddr();
-        } else {
-            return null;
+        synchronized (syncOp) {
+            return workHandler == null ? null : workHandler.getServerIpAddr();
+        }
+    }
+
+    public float getSendFrameRate() {
+        synchronized (syncOp) {
+            return workHandler == null ? 0 : workHandler.getSendFrameRate();
         }
     }
 
     public void start(String rtmpAddr) {
-        workHandler.sendStart(rtmpAddr);
+        synchronized (syncOp) {
+            workHandler.sendStart(rtmpAddr);
+        }
     }
 
     public void feed(RESFlvData flvData, int type) {
-        workHandler.sendFood(flvData, type);
+        synchronized (syncOp) {
+            workHandler.sendFood(flvData, type);
+        }
     }
 
     public void stop() {
-        workHandler.sendStop();
-    }
-
-    public int getTotalSpeed() {
-        if (workHandler != null) {
-            return workHandler.getTotalSpeed();
-        } else {
-            return 0;
+        synchronized (syncOp) {
+            workHandler.sendStop();
         }
     }
 
     public void destroy() {
-        workHandler.removeCallbacksAndMessages(null);
-        workHandlerThread.quit();
-        /**
-         * do not wait librtmp to quit
-         */
+        synchronized (syncOp) {
+            workHandler.removeCallbacksAndMessages(null);
+            workHandlerThread.quit();
+            /**
+             * do not wait librtmp to quit
+             */
 //        try {
 //            workHandlerThread.join();
 //        } catch (InterruptedException ignored) {
 //        }
+        }
+    }
+
+    public int getTotalSpeed() {
+        synchronized (syncOp) {
+            if (workHandler != null) {
+                return workHandler.getTotalSpeed();
+            } else {
+                return 0;
+            }
+        }
     }
 
     static class WorkHandler extends Handler {
@@ -83,6 +103,7 @@ public class RESRtmpSender {
         private int writeMsgNum = 0;
         private RESByteSpeedometer videoByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
         private RESByteSpeedometer audioByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
+        private RESFrameRateMeter sendFrameRateMeter = new RESFrameRateMeter();
         private FLvMetaData fLvMetaData;
         private RESConnectionListener connectionListener;
         private final Object syncConnectionListener = new Object();
@@ -107,6 +128,10 @@ public class RESRtmpSender {
             return serverIpAddr;
         }
 
+        public float getSendFrameRate() {
+            return sendFrameRateMeter.getFps();
+        }
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -114,6 +139,7 @@ public class RESRtmpSender {
                     if (state == STATE.RUNNING) {
                         break;
                     }
+                    sendFrameRateMeter.reSet();
                     LogTools.d("RESRtmpSender,WorkHandler,tid=" + Thread.currentThread().getId());
                     jniRtmpPointer = RtmpClient.open((String) msg.obj, true);
                     final int openR = jniRtmpPointer == 0 ? 1 : 0;
@@ -171,6 +197,7 @@ public class RESRtmpSender {
                         errorTime = 0;
                         if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
+                            sendFrameRateMeter.count();
                         } else {
                             audioByteSpeedometer.gain(flvData.size);
                         }

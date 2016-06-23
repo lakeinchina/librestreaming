@@ -36,6 +36,7 @@ public class RESClient {
 
     /**
      * prepare to stream
+     *
      * @param resConfig config
      * @return true if prepare success
      */
@@ -106,6 +107,9 @@ public class RESClient {
             rtmpSender.destroy();
             videoClient.destroy();
             audioClient.destroy();
+            rtmpSender = null;
+            videoClient = null;
+            audioClient = null;
             LogTools.d("RESClient,destroy()");
         }
     }
@@ -163,19 +167,44 @@ public class RESClient {
 
     /**
      * get the real video size,call after prepare()
+     *
      * @return
      */
     public Size getVideoSize() {
-        return new Size(coreParameters.videoWidth,coreParameters.videoHeight);
+        return new Size(coreParameters.videoWidth, coreParameters.videoHeight);
     }
 
     /**
      * get the rtmp server ip addr ,call after connect success.
+     *
      * @return
      */
-    public String getServerIpAddr()
-    {
-        return rtmpSender.getServerIpAddr();
+    public String getServerIpAddr() {
+        synchronized (SyncOp) {
+            return rtmpSender == null ? null : rtmpSender.getServerIpAddr();
+        }
+    }
+
+    /**
+     * get the real draw frame rate of screen
+     *
+     * @return
+     */
+    public float getDrawFrameRate() {
+        synchronized (SyncOp) {
+            return videoClient == null ? 0 : videoClient.getDrawFrameRate();
+        }
+    }
+
+    /**
+     * get the rate of video frame sent by rtmp
+     *
+     * @return
+     */
+    public float getSendFrameRate() {
+        synchronized (SyncOp) {
+            return rtmpSender == null ? 0 : rtmpSender.getSendFrameRate();
+        }
     }
 
     /**
@@ -189,6 +218,7 @@ public class RESClient {
     public void setSoftVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
         videoClient.setSoftVideoFilter(baseSoftVideoFilter);
     }
+
     /**
      * only for hard filter mode.<br/>
      * use it to update filter property.<br/>
@@ -231,6 +261,7 @@ public class RESClient {
     public void setSoftAudioFilter(BaseSoftAudioFilter baseSoftAudioFilter) {
         audioClient.setSoftAudioFilter(baseSoftAudioFilter);
     }
+
     /**
      * use it to update filter property.<br/>
      * call it with {@link #releaseSoftAudioFilter()}<br/>
@@ -255,7 +286,9 @@ public class RESClient {
      * @return speed in B/s
      */
     public int getAVSpeed() {
-        return rtmpSender==null?0:rtmpSender.getTotalSpeed();
+        synchronized (SyncOp) {
+            return rtmpSender == null ? 0 : rtmpSender.getTotalSpeed();
+        }
     }
 
     /**

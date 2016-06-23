@@ -10,7 +10,6 @@
 local.properties
 build
 *.iml
-gradle.properties
 gradle/
 gradlew
 gradlew.bat

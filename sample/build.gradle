@@ -13,6 +13,10 @@ android {
 
         renderscriptTargetApi 18
         renderscriptSupportModeEnabled true
+
+        ndk{
+            abiFilters "armeabi-v7a"
+        }
     }
     buildTypes {
         release {

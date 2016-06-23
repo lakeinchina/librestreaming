@@ -84,7 +84,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         resConfig.setBitRate(1000 * 1024);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
-        int frontDirection,backDirection;
+        int frontDirection, backDirection;
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, cameraInfo);
         frontDirection = cameraInfo.orientation;
@@ -190,6 +190,9 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
 
     @Override
     public void onOpenConnectionResult(int result) {
+        if (result == 0) {
+            Log.e(TAG, "server IP = " + resClient.getServerIpAddr());
+        }
         /**
          * result==0 success
          * result!=0 failed

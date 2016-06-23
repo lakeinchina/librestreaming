@@ -33,6 +33,14 @@ public class RESRtmpSender {
         workHandler.setConnectionListener(connectionListener);
     }
 
+    public String getServerIpAddr() {
+        if (workHandler != null) {
+            return workHandler.getServerIpAddr();
+        } else {
+            return null;
+        }
+    }
+
     public void start(String rtmpAddr) {
         workHandler.sendStart(rtmpAddr);
     }
@@ -70,6 +78,7 @@ public class RESRtmpSender {
         private final static int MSG_WRITE = 2;
         private final static int MSG_STOP = 3;
         private long jniRtmpPointer = 0;
+        private String serverIpAddr = null;
         private int maxQueueLength;
         private int writeMsgNum = 0;
         private RESByteSpeedometer videoByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
@@ -77,7 +86,7 @@ public class RESRtmpSender {
         private FLvMetaData fLvMetaData;
         private RESConnectionListener connectionListener;
         private final Object syncConnectionListener = new Object();
-        private int errorTime=0;
+        private int errorTime = 0;
 
         private enum STATE {
             IDLE,
@@ -94,6 +103,10 @@ public class RESRtmpSender {
             state = STATE.IDLE;
         }
 
+        public String getServerIpAddr() {
+            return serverIpAddr;
+        }
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -104,6 +117,9 @@ public class RESRtmpSender {
                     LogTools.d("RESRtmpSender,WorkHandler,tid=" + Thread.currentThread().getId());
                     jniRtmpPointer = RtmpClient.open((String) msg.obj, true);
                     final int openR = jniRtmpPointer == 0 ? 1 : 0;
+                    if (openR == 0) {
+                        serverIpAddr = RtmpClient.getIpAddr(jniRtmpPointer);
+                    }
                     synchronized (syncConnectionListener) {
                         if (connectionListener != null) {
                             CallbackDelivery.i().post(new Runnable() {
@@ -126,11 +142,12 @@ public class RESRtmpSender {
                     }
                     break;
                 case MSG_STOP:
-                    if (state == STATE.STOPPED ||  jniRtmpPointer==0) {
+                    if (state == STATE.STOPPED || jniRtmpPointer == 0) {
                         break;
                     }
-                    errorTime=0;
+                    errorTime = 0;
                     final int closeR = RtmpClient.close(jniRtmpPointer);
+                    serverIpAddr = null;
                     synchronized (syncConnectionListener) {
                         if (connectionListener != null) {
                             CallbackDelivery.i().post(new Runnable() {
@@ -151,7 +168,7 @@ public class RESRtmpSender {
                     RESFlvData flvData = (RESFlvData) msg.obj;
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res != 0) {
-                        errorTime=0;
+                        errorTime = 0;
                         if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
                         } else {
@@ -161,7 +178,7 @@ public class RESRtmpSender {
                         ++errorTime;
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
-                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener,errorTime));
+                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, errorTime));
                             }
                         }
                     }

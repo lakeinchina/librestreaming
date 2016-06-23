@@ -161,8 +161,21 @@ public class RESClient {
         videoClient.releaseSoftVideoFilter();
     }
 
+    /**
+     * get the real video size,call after prepare()
+     * @return
+     */
     public Size getVideoSize() {
         return new Size(coreParameters.videoWidth,coreParameters.videoHeight);
+    }
+
+    /**
+     * get the rtmp server ip addr ,call after connect success.
+     * @return
+     */
+    public String getServerIpAddr()
+    {
+        return rtmpSender.getServerIpAddr();
     }
 
     /**

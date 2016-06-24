@@ -61,10 +61,15 @@
             android:layout_weight="10"
             android:background="@android:color/black">
 
-            <TextureView
-                android:id="@+id/txv_preview"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent">
+
+                <me.lake.librestreaming.sample.ui.AspectTextureView
+                    android:id="@+id/txv_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </FrameLayout>
 
             <SeekBar
                 android:id="@+id/sb_zoom"

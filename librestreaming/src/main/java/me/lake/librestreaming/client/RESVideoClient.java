@@ -142,9 +142,9 @@ public class RESVideoClient {
     }
 
     public boolean stop() {
+        camera.stopPreview();
         videoCore.stop();
         camTexture.release();
-        camera.stopPreview();
         return true;
     }
 

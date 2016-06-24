@@ -32,6 +32,7 @@ import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.Size;
 import me.lake.librestreaming.sample.audiofilter.SetVolumeAudioFilter;
+import me.lake.librestreaming.sample.ui.AspectTextureView;
 
 /**
  * Created by lake on 16-5-31.
@@ -41,7 +42,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     public static final String DIRECTION = "direction";
     public static final String RTMPADDR = "rtmpaddr";
     protected RESClient resClient;
-    protected TextureView txv_preview;
+    protected AspectTextureView txv_preview;
     protected ListView lv_filter;
     protected SeekBar sb_attr;
     protected SeekBar sb_zoom;
@@ -68,7 +69,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         started = false;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_streaming);
-        txv_preview = (TextureView) findViewById(R.id.txv_preview);
+        txv_preview = (AspectTextureView) findViewById(R.id.txv_preview);
         lv_filter = (ListView) findViewById(R.id.lv_filter);
         sb_attr = (SeekBar) findViewById(R.id.sb_attr);
         sb_zoom = (SeekBar) findViewById(R.id.sb_zoom);
@@ -105,7 +106,9 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             finish();
             return;
         }
-        Log.d(TAG,"version="+resClient.getVertion());
+        Size s = resClient.getVideoSize();
+        txv_preview.setAspectRatio(AspectTextureView.MODE_OUTSIDE, ((double) s.getWidth()) / s.getHeight());
+        Log.d(TAG, "version=" + resClient.getVertion());
         resClient.setConnectionListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);
         btn_toggle.setOnClickListener(this);

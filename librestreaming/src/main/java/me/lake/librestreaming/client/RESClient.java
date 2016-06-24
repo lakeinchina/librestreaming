@@ -331,6 +331,10 @@ public class RESClient {
         videoClient.takeScreenShot(listener);
     }
 
+    public String getVertion() {
+        return Constants.VERSION;
+    }
+
     /**
      * =====================PRIVATE=================
      **/

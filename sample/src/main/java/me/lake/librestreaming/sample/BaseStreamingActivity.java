@@ -105,6 +105,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             finish();
             return;
         }
+        Log.d(TAG,"version="+resClient.getVertion());
         resClient.setConnectionListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);
         btn_toggle.setOnClickListener(this);

@@ -21,8 +21,6 @@ public class MediaCodecHelper {
         videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, coreParameters.mediacdoecAVCBitRate);
         videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, coreParameters.mediacodecAVCFrameRate);
         videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, coreParameters.mediacodecAVCIFrameInterval);
-        videoFormat.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileMain);
-        videoFormat.setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel31);
         MediaCodec result = null;
         try {
             result = MediaCodec.createEncoderByType(videoFormat.getString(MediaFormat.KEY_MIME));
@@ -44,19 +42,21 @@ public class MediaCodecHelper {
             }
             videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, dstVideoColorFormat);
             //selectprofile
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                MediaCodecInfo.CodecProfileLevel[] profileLevels = result.getCodecInfo().getCapabilitiesForType(videoFormat.getString(MediaFormat.KEY_MIME)).profileLevels;
-//                if (isProfileContain(profileLevels, MediaCodecInfo.CodecProfileLevel.AVCProfileMain)) {
-//                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileMain;
-//                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-//                } else {
-//                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
-//                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-//                }
-//                videoFormat.setInteger(MediaFormat.KEY_PROFILE, coreParameters.mediacodecAVCProfile);
-//                //level must be set even below M
-//                videoFormat.setInteger(MediaFormat.KEY_LEVEL, coreParameters.mediacodecAVClevel);
-//            }
+            coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+            coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                MediaCodecInfo.CodecProfileLevel[] profileLevels = result.getCodecInfo().getCapabilitiesForType(videoFormat.getString(MediaFormat.KEY_MIME)).profileLevels;
+                if (isProfileContain(profileLevels, MediaCodecInfo.CodecProfileLevel.AVCProfileMain, MediaCodecInfo.CodecProfileLevel.AVCLevel31)) {
+                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileMain;
+                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+                } else {
+                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+                }
+            }
+            videoFormat.setInteger(MediaFormat.KEY_PROFILE, coreParameters.mediacodecAVCProfile);
+            //level must be set even below M
+            videoFormat.setInteger(MediaFormat.KEY_LEVEL, coreParameters.mediacodecAVClevel);
         } catch (IOException e) {
             LogTools.trace(e);
             return null;
@@ -91,25 +91,30 @@ public class MediaCodecHelper {
         videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, coreParameters.mediacdoecAVCBitRate);
         videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, coreParameters.mediacodecAVCFrameRate);
         videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, coreParameters.mediacodecAVCIFrameInterval);
-        videoFormat.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileMain);
-        videoFormat.setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel31);
         MediaCodec result = null;
         try {
             result = MediaCodec.createEncoderByType(videoFormat.getString(MediaFormat.KEY_MIME));
             //selectprofile
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                MediaCodecInfo.CodecProfileLevel[] profileLevels = result.getCodecInfo().getCapabilitiesForType(videoFormat.getString(MediaFormat.KEY_MIME)).profileLevels;
-//                if (isProfileContain(profileLevels, MediaCodecInfo.CodecProfileLevel.AVCProfileMain)) {
-//                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileMain;
-//                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-//                } else {
-//                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
-//                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
-//                }
-//                videoFormat.setInteger(MediaFormat.KEY_PROFILE, coreParameters.mediacodecAVCProfile);
-//                //level must be set even below M
-//                videoFormat.setInteger(MediaFormat.KEY_LEVEL, coreParameters.mediacodecAVClevel);
-//            }
+            coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+            coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                MediaCodecInfo.CodecProfileLevel[] profileLevels = result.getCodecInfo().getCapabilitiesForType(videoFormat.getString(MediaFormat.KEY_MIME)).profileLevels;
+                if (isProfileContain(profileLevels, MediaCodecInfo.CodecProfileLevel.AVCProfileMain, MediaCodecInfo.CodecProfileLevel.AVCLevel31)) {
+                    /*
+                    most devices useless.
+                    because of this : <http://androidxref.com/6.0.1_r10/xref/frameworks/av/media/libstagefright/ACodec.cpp#3436>
+                    WTF.
+                     */
+                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileMain;
+                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+                } else {
+                    coreParameters.mediacodecAVCProfile = MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline;
+                    coreParameters.mediacodecAVClevel = MediaCodecInfo.CodecProfileLevel.AVCLevel31;
+                }
+            }
+            videoFormat.setInteger(MediaFormat.KEY_PROFILE, coreParameters.mediacodecAVCProfile);
+            //level must be set even below M
+            videoFormat.setInteger(MediaFormat.KEY_LEVEL, coreParameters.mediacodecAVClevel);
         } catch (IOException e) {
             LogTools.trace(e);
             return null;
@@ -126,9 +131,9 @@ public class MediaCodecHelper {
         return false;
     }
 
-    private static boolean isProfileContain(MediaCodecInfo.CodecProfileLevel[] src, int target) {
+    private static boolean isProfileContain(MediaCodecInfo.CodecProfileLevel[] src, int targetprofile, int targetlevel) {
         for (MediaCodecInfo.CodecProfileLevel color : src) {
-            if (color.profile == target) {
+            if (color.profile == targetprofile && color.level >= targetlevel) {
                 return true;
             }
         }

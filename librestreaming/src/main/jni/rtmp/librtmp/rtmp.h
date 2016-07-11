@@ -284,6 +284,8 @@ extern "C"
     RTMPPacket m_write;
     RTMPSockBuf m_sb;
     RTMP_LNK Link;
+    //lake
+    char ipaddr[16];
   } RTMP;
 
   int RTMP_ParseURL(const char *url, int *protocol, AVal *host,

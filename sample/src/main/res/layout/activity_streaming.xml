@@ -39,6 +39,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Swap" />
+
             <Button
                 android:id="@+id/btn_flash"
                 android:layout_width="0px"
@@ -46,6 +47,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="Flash" />
+
             <Button
                 android:id="@+id/btn_screenshot"
                 android:layout_width="0px"
@@ -61,10 +63,15 @@
             android:layout_weight="10"
             android:background="@android:color/black">
 
-            <TextureView
-                android:id="@+id/txv_preview"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent">
+
+                <me.lake.librestreaming.sample.ui.AspectTextureView
+                    android:id="@+id/txv_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </FrameLayout>
 
             <SeekBar
                 android:id="@+id/sb_zoom"
@@ -73,14 +80,17 @@
                 android:layout_gravity="bottom"
                 android:indeterminate="false"
                 android:padding="10dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    android:text="volume"/>
+                    android:text="volume"
+                    android:textColor="@android:color/white" />
+
                 <SeekBar
                     android:id="@+id/sb_volume"
                     android:layout_width="match_parent"
@@ -101,7 +111,8 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_speed"

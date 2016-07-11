@@ -142,15 +142,17 @@ public class RESVideoClient {
     }
 
     public boolean stop() {
+        camera.stopPreview();
         videoCore.stop();
         camTexture.release();
-        camera.stopPreview();
         return true;
     }
 
     public boolean destroy() {
         camera.release();
         videoCore.destroy();
+        videoCore = null;
+        camera = null;
         return true;
     }
 
@@ -235,6 +237,7 @@ public class RESVideoClient {
             ((RESSoftVideoCore) videoCore).setVideoFilter(baseSoftVideoFilter);
         }
     }
+
     public BaseHardVideoFilter acquireHardVideoFilter() {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_HARD) {
             return ((RESHardVideoCore) videoCore).acquireVideoFilter();
@@ -256,5 +259,9 @@ public class RESVideoClient {
 
     public void takeScreenShot(RESScreenShotListener listener) {
         videoCore.takeScreenShot(listener);
+    }
+
+    public float getDrawFrameRate() {
+        return videoCore == null ? 0 : videoCore.getDrawFrameRate();
     }
 }

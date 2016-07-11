@@ -312,15 +312,28 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
     }
 
+    @Override
+    public float getDrawFrameRate() {
+        synchronized (syncOp) {
+            return videoFilterHandler == null ? 0 : videoFilterHandler.getDrawFrameRate();
+        }
+    }
+
     //worker handler
     private class VideoFilterHandler extends Handler {
         public static final int FILTER_LOCK_TOLERATION = 3;//3ms
         public static final int WHAT_INCOMING_BUFF = 1;
         private int sequenceNum;
+        private RESFrameRateMeter drawFrameRateMeter;
 
         VideoFilterHandler(Looper looper) {
             super(looper);
             sequenceNum = 0;
+            drawFrameRateMeter = new RESFrameRateMeter();
+        }
+
+        public float getDrawFrameRate() {
+            return drawFrameRateMeter.getFps();
         }
 
         @Override
@@ -381,7 +394,7 @@ public class RESSoftVideoCore implements RESVideoCore {
                 }
                 orignVideoBuffs[targetIndex].isReadyToFill = true;
             }
-
+            drawFrameRateMeter.count();
             //suitable4VideoEncoderBuff is ready
             int eibIndex = dstVideoEncoder.dequeueInputBuffer(-1);
             if (eibIndex >= 0) {

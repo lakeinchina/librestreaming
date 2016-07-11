@@ -208,6 +208,13 @@ public class RESHardVideoCore implements RESVideoCore {
         }
     }
 
+    @Override
+    public float getDrawFrameRate() {
+        synchronized (syncOp) {
+            return videoGLThread == null ? 0 : videoGLThread.getDrawFrameRate();
+        }
+    }
+
     private class VideoGLThread extends Thread {
         public static final int FILTER_LOCK_TOLERATION = 3;//3ms
         private boolean quit;
@@ -232,6 +239,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private FloatBuffer cameraTextureVerticesBuffer;
         private ShortBuffer drawIndecesBuffer;
         private BaseHardVideoFilter innerVideoFilter = null;
+        private RESFrameRateMeter drawFrameRateMeter;
 
         VideoGLThread(SurfaceTexture camTexture, Surface inputSuface, int cameraIndex) {
             screenCleaned = false;
@@ -241,6 +249,11 @@ public class RESHardVideoCore implements RESVideoCore {
             mediaCodecGLWapper = null;
             quit = false;
             currCamera = cameraIndex;
+            drawFrameRateMeter = new RESFrameRateMeter();
+        }
+
+        public float getDrawFrameRate() {
+            return drawFrameRateMeter.getFps();
         }
 
         public void updateCameraIndex(int cameraIndex) {
@@ -306,6 +319,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 drawFrameBuffer();
                 drawMediaCodec();
                 drawScreen();
+                drawFrameRateMeter.count();
                 synchronized (syncThread) {
                     frameNum--;
                 }
@@ -405,7 +419,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 }
                 if (innerVideoFilter != null) {
                     synchronized (syncCameraTextureVerticesBuffer) {
-                        innerVideoFilter.onDraw(sample2DFrameBufferTexture,frameBuffer, shapeVerticesBuffer, cameraTextureVerticesBuffer);
+                        innerVideoFilter.onDraw(sample2DFrameBufferTexture, frameBuffer, shapeVerticesBuffer, cameraTextureVerticesBuffer);
                     }
                 } else {
                     drawOriginFrameBuffer();

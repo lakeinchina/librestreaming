@@ -22,4 +22,6 @@ public class RtmpClient {
 
     public static native int close(long rtmpPointer);
 
+    public static native String getIpAddr(long rtmpPointer);
+
 }

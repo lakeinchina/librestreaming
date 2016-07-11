@@ -26,7 +26,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include <assert.h>
+#include <netdb.h>
 #include <time.h>
 #include <fcntl.h>
 #include "../log.h"
@@ -1094,6 +1096,11 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     return FALSE;
 
   r->m_bSendCounter = TRUE;
+
+  char *temp=inet_ntoa(service.sin_addr);
+  int saddr_len=strlen(temp);
+  memcpy(r->ipaddr,temp,saddr_len);
+  r->ipaddr[saddr_len]='\0';
 
   return RTMP_Connect1(r, cp);
 }

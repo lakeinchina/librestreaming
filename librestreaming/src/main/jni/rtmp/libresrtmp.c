@@ -130,3 +130,13 @@
  	RTMP_Free((RTMP*)rtmp);
  	return 0;
  }
+
+JNIEXPORT jstring JNICALL Java_me_lake_librestreaming_rtmp_RtmpClient_getIpAddr
+		(JNIEnv * env,jobject thiz,jlong rtmp) {
+	if(rtmp!=0){
+		RTMP* r= (RTMP*)rtmp;
+		return (*env)->NewStringUTF(env, r->ipaddr);
+	}else {
+		return (*env)->NewStringUTF(env, "");
+	}
+}

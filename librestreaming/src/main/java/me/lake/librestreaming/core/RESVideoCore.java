@@ -30,4 +30,6 @@ public interface RESVideoCore {
     void destroyPreview();
 
     void takeScreenShot(RESScreenShotListener listener);
+
+    float getDrawFrameRate();
 }

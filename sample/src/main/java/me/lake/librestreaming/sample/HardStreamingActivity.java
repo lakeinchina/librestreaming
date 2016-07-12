@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import jp.co.cyberagent.android.gpuimage.GPUImageColorInvertFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageGammaFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImagePixelationFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageSketchFilter;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.hardvideofilter.HardVideoGroupFilter;
 import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
@@ -27,6 +31,7 @@ import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
 import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
+import me.lake.librestreaming.sample.hardfilter.extra.GPUImageCompatibleFilter;
 import me.lake.librestreaming.tools.GLESTools;
 
 /**
@@ -45,6 +50,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         ArrayList<FilterItem> filterItems = new ArrayList<>();
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null, null)));
+        filterItems.add(new FilterItem("gpuimage", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
         filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(2)));
         filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));

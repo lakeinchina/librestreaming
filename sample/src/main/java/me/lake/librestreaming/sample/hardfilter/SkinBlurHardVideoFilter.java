@@ -46,7 +46,7 @@ public class SkinBlurHardVideoFilter extends OriginalHardVideoFilter {
             "            }\n" +
             "            color2 = texture2D(uCamTexture,vec2(xf,yf));\n" +
             "            tmp = color - color2;\n" +
-            "            gauss = gaussianMap[abs(x)][abs(y)];\n" +
+            "            gauss = gaussianMap[x<0?-x:x][y<0?-y:y];\n" +
             "            if (abs(tmp.r) < maxdelta){\n" +
             "                sum.r += (color2.r*gauss);\n" +
             "                fact.r +=gauss;\n" +

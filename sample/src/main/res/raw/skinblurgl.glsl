@@ -34,7 +34,7 @@ void main(){
             }
             color2 = texture2D(uCamTexture,vec2(xf,yf));
             tmp = color - color2;
-            gauss = gaussianMap[abs(x)][abs(y)];
+            gauss = gaussianMap[x<0?-x:x][y<0?-y:y];
             if (abs(tmp.r) < maxdelta){
                 sum.r += (color2.r*gauss);
                 fact.r +=gauss;
@@ -70,3 +70,5 @@ void main(){
     }
     gl_FragColor = vec4(tmp.rgb,1.0);
 }
+
+

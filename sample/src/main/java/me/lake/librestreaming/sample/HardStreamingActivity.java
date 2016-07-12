@@ -46,10 +46,10 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null, null)));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
-        filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(), R.raw.skinblurgl))));
+        filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(2)));
         filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));
         LinkedList<BaseHardVideoFilter> filters = new LinkedList<>();
-        filters.add(new SkinBlurHardVideoFilter(GLESTools.readTextFile(getResources(), R.raw.skinblurgl)));
+        filters.add(new SkinBlurHardVideoFilter(2));
         filters.add(new WhiteningHardVideoFilter());
         filterItems.add(new FilterItem("FacialUp", new HardVideoGroupFilter(filters)));
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);

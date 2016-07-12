@@ -119,7 +119,6 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - 在acquireHardVideoFilter和releaseHardVideoFilter之间可以安全的修改滤镜的属性。不要持有滤镜超过3毫秒。
 
 
-### 关于硬编码(mediacodec)：
+### 关于磨皮算法：
 
-- 软模式下使用buffer to buffer。
-- 硬模式下使用surface to surface。
+- 使用优化过的带阈值的高斯模糊算法(Selective Gaussian Blur)，sigma = 0.1，稀疏的取周围24个点，正态分布取权重计算均值。

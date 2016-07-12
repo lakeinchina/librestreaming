@@ -23,6 +23,7 @@ import me.lake.librestreaming.tools.LogTools;
  */
 public class RESVideoClient {
     RESCoreParameters resCoreParameters;
+    private final Object syncOp = new Object();
     private Camera camera;
     private SurfaceTexture camTexture;
     private int cameraNum;
@@ -36,47 +37,49 @@ public class RESVideoClient {
     }
 
     public boolean prepare(RESConfig resConfig) {
-        if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
-            currentCameraIndex = resConfig.getDefaultCamera();
+        synchronized (syncOp) {
+            if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
+                currentCameraIndex = resConfig.getDefaultCamera();
+            }
+            if (null == (camera = createCamera(currentCameraIndex))) {
+                LogTools.e("can not open camera");
+                return false;
+            }
+            Camera.Parameters parameters = camera.getParameters();
+            CameraHelper.selectCameraPreviewWH(parameters, resCoreParameters, resConfig.getTargetVideoSize());
+            if (resCoreParameters.isPortrait) {
+                resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
+                resCoreParameters.videoWidth = resCoreParameters.previewVideoHeight;
+            } else {
+                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
+                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
+            }
+            CameraHelper.selectCameraFpsRange(parameters, resCoreParameters);
+            if (!CameraHelper.selectCameraColorFormat(parameters, resCoreParameters)) {
+                LogTools.e("CameraHelper.selectCameraColorFormat,Failed");
+                resCoreParameters.dump();
+                return false;
+            }
+            if (!CameraHelper.configCamera(camera, resCoreParameters)) {
+                LogTools.e("CameraHelper.configCamera,Failed");
+                resCoreParameters.dump();
+                return false;
+            }
+            switch (resCoreParameters.filterMode) {
+                case RESCoreParameters.FILTER_MODE_SOFT:
+                    videoCore = new RESSoftVideoCore(resCoreParameters);
+                    break;
+                case RESCoreParameters.FILTER_MODE_HARD:
+                    videoCore = new RESHardVideoCore(resCoreParameters);
+                    break;
+            }
+            videoCore.setCurrentCamera(currentCameraIndex);
+            if (!videoCore.prepare(resConfig)) {
+                return false;
+            }
+            prepareVideo();
+            return true;
         }
-        if (null == (camera = createCamera(currentCameraIndex))) {
-            LogTools.e("can not open camera");
-            return false;
-        }
-        Camera.Parameters parameters = camera.getParameters();
-        CameraHelper.selectCameraPreviewWH(parameters, resCoreParameters, resConfig.getTargetVideoSize());
-        if (resCoreParameters.isPortrait) {
-            resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
-            resCoreParameters.videoWidth = resCoreParameters.previewVideoHeight;
-        } else {
-            resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
-            resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
-        }
-        CameraHelper.selectCameraFpsRange(parameters, resCoreParameters);
-        if (!CameraHelper.selectCameraColorFormat(parameters, resCoreParameters)) {
-            LogTools.e("CameraHelper.selectCameraColorFormat,Failed");
-            resCoreParameters.dump();
-            return false;
-        }
-        if (!CameraHelper.configCamera(camera, resCoreParameters)) {
-            LogTools.e("CameraHelper.configCamera,Failed");
-            resCoreParameters.dump();
-            return false;
-        }
-        switch (resCoreParameters.filterMode) {
-            case RESCoreParameters.FILTER_MODE_SOFT:
-                videoCore = new RESSoftVideoCore(resCoreParameters);
-                break;
-            case RESCoreParameters.FILTER_MODE_HARD:
-                videoCore = new RESHardVideoCore(resCoreParameters);
-                break;
-        }
-        videoCore.setCurrentCamera(currentCameraIndex);
-        if (!videoCore.prepare(resConfig)) {
-            return false;
-        }
-        prepareVideo();
-        return true;
     }
 
     private Camera createCamera(int cameraId) {
@@ -106,17 +109,23 @@ public class RESVideoClient {
             camera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {
-                    if (videoCore != null && data != null) {
-                        ((RESSoftVideoCore) videoCore).queueVideo(data);
+                    synchronized (syncOp) {
+                        if (videoCore != null && data != null) {
+                            ((RESSoftVideoCore) videoCore).queueVideo(data);
+                        }
+                        camera.addCallbackBuffer(data);
                     }
-                    camera.addCallbackBuffer(data);
                 }
             });
         } else {
             camTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                    ((RESHardVideoCore) videoCore).onFrameAvailable();
+                    synchronized (syncOp) {
+                        if (videoCore != null) {
+                            ((RESHardVideoCore) videoCore).onFrameAvailable();
+                        }
+                    }
                 }
             });
         }
@@ -132,28 +141,34 @@ public class RESVideoClient {
     }
 
     public boolean start(RESFlvDataCollecter flvDataCollecter) {
-        if (!startVideo()) {
-            resCoreParameters.dump();
-            LogTools.e("RESVideoClient,start(),failed");
-            return false;
+        synchronized (syncOp) {
+            if (!startVideo()) {
+                resCoreParameters.dump();
+                LogTools.e("RESVideoClient,start(),failed");
+                return false;
+            }
+            videoCore.start(flvDataCollecter, camTexture);
+            return true;
         }
-        videoCore.start(flvDataCollecter, camTexture);
-        return true;
     }
 
     public boolean stop() {
-        camera.stopPreview();
-        videoCore.stop();
-        camTexture.release();
-        return true;
+        synchronized (syncOp) {
+            camera.stopPreview();
+            videoCore.stop();
+            camTexture.release();
+            return true;
+        }
     }
 
     public boolean destroy() {
-        camera.release();
-        videoCore.destroy();
-        videoCore = null;
-        camera = null;
-        return true;
+        synchronized (syncOp) {
+            camera.release();
+            videoCore.destroy();
+            videoCore = null;
+            camera = null;
+            return true;
+        }
     }
 
     public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
@@ -169,51 +184,55 @@ public class RESVideoClient {
     }
 
     public boolean swapCamera() {
-        LogTools.d("RESClient,swapCamera()");
-        camera.stopPreview();
-        camera.release();
-        camera = null;
-        if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
-            LogTools.e("can not swap camera");
-            return false;
-        }
-        videoCore.setCurrentCamera(currentCameraIndex);
-        CameraHelper.selectCameraFpsRange(camera.getParameters(), resCoreParameters);
-        if (!CameraHelper.configCamera(camera, resCoreParameters)) {
+        synchronized (syncOp) {
+            LogTools.d("RESClient,swapCamera()");
+            camera.stopPreview();
             camera.release();
-            return false;
+            camera = null;
+            if (null == (camera = createCamera(currentCameraIndex = (++currentCameraIndex) % cameraNum))) {
+                LogTools.e("can not swap camera");
+                return false;
+            }
+            videoCore.setCurrentCamera(currentCameraIndex);
+            CameraHelper.selectCameraFpsRange(camera.getParameters(), resCoreParameters);
+            if (!CameraHelper.configCamera(camera, resCoreParameters)) {
+                camera.release();
+                return false;
+            }
+            prepareVideo();
+            camTexture.release();
+            videoCore.updateCamTexture(null);
+            startVideo();
+            videoCore.updateCamTexture(camTexture);
+            return true;
         }
-        prepareVideo();
-        camTexture.release();
-        videoCore.updateCamTexture(null);
-        startVideo();
-        videoCore.updateCamTexture(camTexture);
-        return true;
     }
 
     public boolean toggleFlashLight() {
-        try {
-            Camera.Parameters parameters = camera.getParameters();
-            List<String> flashModes = parameters.getSupportedFlashModes();
-            String flashMode = parameters.getFlashMode();
-            if (!Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode)) {
-                if (flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                    camera.setParameters(parameters);
-                    return true;
+        synchronized (syncOp) {
+            try {
+                Camera.Parameters parameters = camera.getParameters();
+                List<String> flashModes = parameters.getSupportedFlashModes();
+                String flashMode = parameters.getFlashMode();
+                if (!Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode)) {
+                    if (flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                        camera.setParameters(parameters);
+                        return true;
+                    }
+                } else if (!Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)) {
+                    if (flashModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                        camera.setParameters(parameters);
+                        return true;
+                    }
                 }
-            } else if (!Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)) {
-                if (flashModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                    camera.setParameters(parameters);
-                    return true;
-                }
+            } catch (Exception e) {
+                LogTools.d("toggleFlashLight,failed" + e.getMessage());
+                return false;
             }
-        } catch (Exception e) {
-            LogTools.d("toggleFlashLight,failed" + e.getMessage());
             return false;
         }
-        return false;
     }
 
     public boolean setZoomByPercent(float targetPercent) {
@@ -263,10 +282,16 @@ public class RESVideoClient {
     }
 
     public void takeScreenShot(RESScreenShotListener listener) {
-        videoCore.takeScreenShot(listener);
+        synchronized (syncOp) {
+            if (videoCore != null) {
+                videoCore.takeScreenShot(listener);
+            }
+        }
     }
 
     public float getDrawFrameRate() {
-        return videoCore == null ? 0 : videoCore.getDrawFrameRate();
+        synchronized (syncOp) {
+            return videoCore == null ? 0 : videoCore.getDrawFrameRate();
+        }
     }
 }

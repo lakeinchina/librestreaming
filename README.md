@@ -6,6 +6,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Filters support soft mode (CPU processing) and hard mode (GPU/OpenGLES rendering)
 - Soft mode filter can be implemented by processing NV21 image array captured from camera  
 - Hard mode filter can be implemented by rendering image texture captured from camera
+- Compatible with GPUImage,use GPUImageFilter without change one line
 - Support pixel rotation and flip
 - Support encoding paramaters like resolution(depend on device), bitrate, etc
 - H264 profile is auto-adjusted on different device
@@ -95,6 +96,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 ### 特性：
 - 支持cpu滤镜，并可以通过处理图像数组来自定义滤镜。
 - 支持gpu滤镜，并可以通过opengles绘制图像纹理来自定义滤镜。
+- gpu滤镜模式下兼容GPUImage，一行代码不用修改就可以直接使用GPUImage的滤镜。
 - 前后摄像头快速切换，不会打断推流。
 - 可以选择图像大小，码流比特率，具体取决于设备支持。
 
@@ -122,3 +124,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 ### 关于磨皮算法：
 
 - 使用优化过的带阈值的高斯模糊算法(Selective Gaussian Blur)，sigma = 0.1，稀疏的取周围24个点，正态分布取权重计算均值。
+
+### 关于兼容GPUImageFilter：
+
+- 使GPUImageCompatibleFilter来兼容GPUImage的滤镜，注意不能直接使用GPUImageGroupFilter，需要把单独的滤镜用GPUImageCompatibleFilter包裹，再用HardVideoGroupFilter组合起来，具体可以参考sample中的gpuimage:SketchGroup滤镜。

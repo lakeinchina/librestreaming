@@ -11,6 +11,7 @@ import me.lake.librestreaming.core.GLHelper;
 public class BaseHardVideoFilter {
     protected int SIZE_WIDTH;
     protected int SIZE_HEIGHT;
+    protected int directionFlag=-1;
     protected ShortBuffer drawIndecesBuffer;
 
     public void onInit(int VWidth, int VHeight) {
@@ -24,5 +25,9 @@ public class BaseHardVideoFilter {
 
     public void onDestroy() {
 
+    }
+
+    public void onDirectionUpdate(int _directionFlag) {
+        this.directionFlag = _directionFlag;
     }
 }

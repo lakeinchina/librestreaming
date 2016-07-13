@@ -32,10 +32,10 @@ public class HardVideoGroupFilter extends BaseHardVideoFilter {
             wrapper.filter.onInit(VWidth, VHeight);
             int[] frameBuffer = new int[1];
             int[] frameBufferTexture = new int[1];
-                GLESTools.createFrameBuff(frameBuffer,
-                        frameBufferTexture,
-                        SIZE_WIDTH,
-                        SIZE_HEIGHT);
+            GLESTools.createFrameBuff(frameBuffer,
+                    frameBufferTexture,
+                    SIZE_WIDTH,
+                    SIZE_HEIGHT);
             wrapper.frameBuffer = frameBuffer[0];
             wrapper.frameBufferTexture = frameBufferTexture[0];
             i++;
@@ -44,7 +44,7 @@ public class HardVideoGroupFilter extends BaseHardVideoFilter {
 
 
     @Override
-    public void onDraw(int cameraTexture,int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
+    public void onDraw(int cameraTexture, int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
         FilterWrapper preFilterWrapper = null;
         int i = 0;
         int texture;
@@ -71,6 +71,14 @@ public class HardVideoGroupFilter extends BaseHardVideoFilter {
             wrapper.filter.onDestroy();
             GLES20.glDeleteFramebuffers(1, new int[]{wrapper.frameBuffer}, 0);
             GLES20.glDeleteTextures(1, new int[]{wrapper.frameBufferTexture}, 0);
+        }
+    }
+
+    @Override
+    public void onDirectionUpdate(int _directionFlag) {
+        super.onDirectionUpdate(_directionFlag);
+        for (FilterWrapper wrapper : filterWrappers) {
+            wrapper.filter.onDirectionUpdate(_directionFlag);
         }
     }
 

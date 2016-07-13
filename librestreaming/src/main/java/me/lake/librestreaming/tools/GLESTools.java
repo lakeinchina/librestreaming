@@ -13,6 +13,9 @@ import java.io.InputStreamReader;
  * Created by lake on 16-5-4.
  */
 public class GLESTools {
+    public static int FLOAT_SIZE_BYTES = 4;
+    public static int SHORT_SIZE_BYTES = 2;
+
     public static String readTextFile(Resources res, int resId) {
         InputStream inputStream = res.openRawResource(resId);
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));

@@ -17,8 +17,14 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import jp.co.cyberagent.android.gpuimage.GPUImage3x3ConvolutionFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImage3x3TextureSamplingFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageCGAColorspaceFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageColorInvertFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageCrosshatchFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageGammaFilter;
+import jp.co.cyberagent.android.gpuimage.GPUImageGrayscaleFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImagePixelationFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageSketchFilter;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
@@ -50,7 +56,6 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         ArrayList<FilterItem> filterItems = new ArrayList<>();
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null, null)));
-        filterItems.add(new FilterItem("gpuimage", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
         filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(2)));
         filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));
@@ -67,6 +72,21 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("DifferenceBlend", new DifferenceBlendFilterHard(bitmap)));
         filterItems.add(new FilterItem("SobelEdgeDetection", new SobelEdgeDetectionHardVideoFilter()));
+        filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
+        filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<GPUImagePixelationFilter>(new GPUImagePixelationFilter())));
+        GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();
+        tmp.setConvolutionKernel(new float[]{
+                -1.0f, 0.0f, 1.0f,
+                -2.0f, 0.0f, 2.0f,
+                -1.0f, 0.0f, 1.0f
+        });
+        filterItems.add(new FilterItem("gpuimage:3x3Convolution", new GPUImageCompatibleFilter<GPUImage3x3ConvolutionFilter>(tmp)));
+        LinkedList<BaseHardVideoFilter> sketchfilters = new LinkedList<>();
+        sketchfilters.add(new GPUImageCompatibleFilter<GPUImageGrayscaleFilter>(new GPUImageGrayscaleFilter()));
+        sketchfilters.add(new GPUImageCompatibleFilter<GPUImage3x3TextureSamplingFilter>(new GPUImage3x3TextureSamplingFilter(SKETCH_FRAGMENT_SHADER)));
+        filterItems.add(new FilterItem("gpuimage:SketchGroup", new HardVideoGroupFilter(sketchfilters)));
+        filterItems.add(new FilterItem("gpuimage:CGAColor", new GPUImageCompatibleFilter<GPUImageCGAColorspaceFilter>(new GPUImageCGAColorspaceFilter())));
+        filterItems.add(new FilterItem("gpuimage:Crosshatch", new GPUImageCompatibleFilter<GPUImageCrosshatchFilter>(new GPUImageCrosshatchFilter())));
         filterAdapter = new FilterAdapter();
         filterAdapter.updateFilters(filterItems);
         lv_filter.setAdapter(filterAdapter);
@@ -84,6 +104,18 @@ public class HardStreamingActivity extends BaseStreamingActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 BaseHardVideoFilter filter = resClient.acquireHardVideoFilter();
+                if (filter != null) {
+                    if (filter instanceof GPUImageCompatibleFilter) {
+                        GPUImageFilter gpufilter = ((GPUImageCompatibleFilter) filter).getGPUImageFilter();
+                        if (gpufilter instanceof GPUImagePixelationFilter) {
+                            ((GPUImagePixelationFilter) gpufilter).setPixel(progress / 5.0f);
+                        }
+                        if (gpufilter instanceof GPUImageCrosshatchFilter) {
+                            ((GPUImageCrosshatchFilter) gpufilter).setCrossHatchSpacing(range(progress, 0.0f, 0.06f));
+                            ((GPUImageCrosshatchFilter) gpufilter).setLineWidth(range(progress, 0.0f, 0.006f));
+                        }
+                    }
+                }
                 resClient.releaseHardVideoFilter();
             }
 
@@ -188,4 +220,46 @@ public class HardStreamingActivity extends BaseStreamingActivity {
             }
         }
     }
+    //========GPUImage suff==============
+    protected float range(final int percentage, final float start, final float end) {
+        return (end - start) * percentage / 100.0f + start;
+    }
+
+    protected int range(final int percentage, final int start, final int end) {
+        return (end - start) * percentage / 100 + start;
+    }
+    public static final String SKETCH_FRAGMENT_SHADER = "" +
+            "precision mediump float;\n" +
+            "\n" +
+            "varying vec2 textureCoordinate;\n" +
+            "varying vec2 leftTextureCoordinate;\n" +
+            "varying vec2 rightTextureCoordinate;\n" +
+            "\n" +
+            "varying vec2 topTextureCoordinate;\n" +
+            "varying vec2 topLeftTextureCoordinate;\n" +
+            "varying vec2 topRightTextureCoordinate;\n" +
+            "\n" +
+            "varying vec2 bottomTextureCoordinate;\n" +
+            "varying vec2 bottomLeftTextureCoordinate;\n" +
+            "varying vec2 bottomRightTextureCoordinate;\n" +
+            "\n" +
+            "uniform sampler2D inputImageTexture;\n" +
+            "\n" +
+            "void main()\n" +
+            "{\n" +
+            "float bottomLeftIntensity = texture2D(inputImageTexture, bottomLeftTextureCoordinate).r;\n" +
+            "float topRightIntensity = texture2D(inputImageTexture, topRightTextureCoordinate).r;\n" +
+            "float topLeftIntensity = texture2D(inputImageTexture, topLeftTextureCoordinate).r;\n" +
+            "float bottomRightIntensity = texture2D(inputImageTexture, bottomRightTextureCoordinate).r;\n" +
+            "float leftIntensity = texture2D(inputImageTexture, leftTextureCoordinate).r;\n" +
+            "float rightIntensity = texture2D(inputImageTexture, rightTextureCoordinate).r;\n" +
+            "float bottomIntensity = texture2D(inputImageTexture, bottomTextureCoordinate).r;\n" +
+            "float topIntensity = texture2D(inputImageTexture, topTextureCoordinate).r;\n" +
+            "float h = -topLeftIntensity - 2.0 * topIntensity - topRightIntensity + bottomLeftIntensity + 2.0 * bottomIntensity + bottomRightIntensity;\n" +
+            "float v = -bottomLeftIntensity - 2.0 * leftIntensity - topLeftIntensity + bottomRightIntensity + 2.0 * rightIntensity + topRightIntensity;\n" +
+            "\n" +
+            "float mag = 1.0 - length(vec2(h, v));\n" +
+            "\n" +
+            "gl_FragColor = vec4(vec3(mag), 1.0);\n" +
+            "}\n";
 }

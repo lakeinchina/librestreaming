@@ -31,6 +31,7 @@ import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.hardvideofilter.HardVideoGroupFilter;
 import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
+import me.lake.librestreaming.sample.hardfilter.ColorMixHardFilter;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
@@ -59,6 +60,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
         filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(2)));
         filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));
+        filterItems.add(new FilterItem("ColorMix", new ColorMixHardFilter(0.98f, 0.72f, 0.82f, 0.3f)));
         LinkedList<BaseHardVideoFilter> filters = new LinkedList<>();
         filters.add(new SkinBlurHardVideoFilter(2));
         filters.add(new WhiteningHardVideoFilter());
@@ -114,6 +116,9 @@ public class HardStreamingActivity extends BaseStreamingActivity {
                             ((GPUImageCrosshatchFilter) gpufilter).setCrossHatchSpacing(range(progress, 0.0f, 0.06f));
                             ((GPUImageCrosshatchFilter) gpufilter).setLineWidth(range(progress, 0.0f, 0.006f));
                         }
+                    }
+                    if (filter instanceof ColorMixHardFilter) {
+                        ((ColorMixHardFilter)filter).setMixColor((float)(0.5+0.5*Math.sin(Math.PI*5*(progress/100.0))),(float)(0.5+0.5*Math.sin(Math.PI*2*(progress/100.0))),(float)(0.5+0.5*Math.sin(Math.PI*7*(progress/100.0))),0.3f);
                     }
                 }
                 resClient.releaseHardVideoFilter();

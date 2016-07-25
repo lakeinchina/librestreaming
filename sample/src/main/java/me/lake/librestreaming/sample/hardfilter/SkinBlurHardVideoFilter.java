@@ -17,7 +17,7 @@ public class SkinBlurHardVideoFilter extends OriginalHardVideoFilter {
             "uniform mediump float xStep;\n" +
             "uniform mediump float yStep;\n" +
             "const mediump mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);\n" +
-            "const mediump mat3 gaussianMap = mat3(0.9,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);\n" +
+            "const mediump mat3 gaussianMap = mat3(0.142,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);\n" +
             "void main(){\n" +
             "    vec4 color = texture2D(uCamTexture,vCamTextureCoord);\n" +
             "    vec3 yuv = rgb2yuv*color.rgb;\n" +

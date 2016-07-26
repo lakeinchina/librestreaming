@@ -293,7 +293,7 @@ public class GLHelper {
         return result;
     }
 
-    public static FloatBuffer getCamera2DTextureVerticesBuffer(final int directionFlag) {
+    public static FloatBuffer getCamera2DTextureVerticesBuffer(final int directionFlag, final float cropRatio) {
         if (directionFlag == -1) {
             FloatBuffer result = ByteBuffer.allocateDirect(FLOAT_SIZE_BYTES * Cam2dTextureVertices.length).
                     order(ByteOrder.nativeOrder()).
@@ -316,6 +316,33 @@ public class GLHelper {
             default:
                 buffer = Cam2dTextureVertices.clone();
         }
+        if ((directionFlag & 0xF0) == RESCoreParameters.FLAG_DIRECTION_ROATATION_0 || (directionFlag & 0xF0) == RESCoreParameters.FLAG_DIRECTION_ROATATION_180) {
+            if (cropRatio > 0) {
+                buffer[1] = buffer[1] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[3] = buffer[3] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[5] = buffer[5] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[7] = buffer[7] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+            } else {
+                buffer[0] = buffer[0] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[2] = buffer[2] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[4] = buffer[4] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[6] = buffer[6] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+            }
+        } else {
+            if (cropRatio > 0) {
+                buffer[0] = buffer[0] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[2] = buffer[2] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[4] = buffer[4] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+                buffer[6] = buffer[6] == 1.0f ? (1.0f - cropRatio) : cropRatio;
+            } else {
+                buffer[1] = buffer[1] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[3] = buffer[3] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[5] = buffer[5] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+                buffer[7] = buffer[7] == 1.0f ? (1.0f + cropRatio) : -cropRatio;
+            }
+        }
+
+
         if ((directionFlag & RESCoreParameters.FLAG_DIRECTION_FLIP_HORIZONTAL) != 0) {
             buffer[0] = flip(buffer[0]);
             buffer[2] = flip(buffer[2]);
@@ -346,6 +373,6 @@ public class GLHelper {
     }
 
     private static float flip(final float i) {
-        return i == 0.0f ? 1.0f : 0.0f;
+        return (1.0f - i);
     }
 }

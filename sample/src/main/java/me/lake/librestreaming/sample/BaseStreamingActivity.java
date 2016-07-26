@@ -81,7 +81,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         resClient = new RESClient();
         final RESConfig resConfig = RESConfig.obtain();
         resConfig.setFilterMode(filtermode);
-        resConfig.setTargetVideoSize(new Size(720, 480));
+        resConfig.setTargetVideoSize(new Size(700, 480));
         resConfig.setBitRate(1000 * 1024);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
@@ -107,7 +107,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             return;
         }
         Size s = resClient.getVideoSize();
-        txv_preview.setAspectRatio(AspectTextureView.MODE_OUTSIDE, ((double) s.getWidth()) / s.getHeight());
+        txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) s.getWidth()) / s.getHeight());
         Log.d(TAG, "version=" + resClient.getVertion());
         resClient.setConnectionListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);

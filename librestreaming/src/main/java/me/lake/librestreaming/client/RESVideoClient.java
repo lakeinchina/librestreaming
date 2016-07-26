@@ -47,14 +47,8 @@ public class RESVideoClient {
             }
             Camera.Parameters parameters = camera.getParameters();
             CameraHelper.selectCameraPreviewWH(parameters, resCoreParameters, resConfig.getTargetVideoSize());
-            if (resCoreParameters.isPortrait) {
-                resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
-                resCoreParameters.videoWidth = resCoreParameters.previewVideoHeight;
-            } else {
-                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
-                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
-            }
             CameraHelper.selectCameraFpsRange(parameters, resCoreParameters);
+            resoveResolution(resCoreParameters, resConfig);
             if (!CameraHelper.selectCameraColorFormat(parameters, resCoreParameters)) {
                 LogTools.e("CameraHelper.selectCameraColorFormat,Failed");
                 resCoreParameters.dump();
@@ -292,6 +286,41 @@ public class RESVideoClient {
     public float getDrawFrameRate() {
         synchronized (syncOp) {
             return videoCore == null ? 0 : videoCore.getDrawFrameRate();
+        }
+    }
+
+    private void resoveResolution(RESCoreParameters resCoreParameters, RESConfig resConfig) {
+        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            if (resCoreParameters.isPortrait) {
+                resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
+                resCoreParameters.videoWidth = resCoreParameters.previewVideoHeight;
+            } else {
+                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
+                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
+            }
+        } else {
+            float pw, ph, vw, vh;
+            if (resCoreParameters.isPortrait) {
+                resCoreParameters.videoHeight = resConfig.getTargetVideoSize().getWidth();
+                resCoreParameters.videoWidth = resConfig.getTargetVideoSize().getHeight();
+                pw = resCoreParameters.previewVideoHeight;
+                ph = resCoreParameters.previewVideoWidth;
+            } else {
+                resCoreParameters.videoWidth = resConfig.getTargetVideoSize().getWidth();
+                resCoreParameters.videoHeight = resConfig.getTargetVideoSize().getHeight();
+                pw = resCoreParameters.previewVideoWidth;
+                ph = resCoreParameters.previewVideoHeight;
+            }
+            vw = resCoreParameters.videoWidth;
+            vh = resCoreParameters.videoHeight;
+            float pr = ph / pw, vr = vh / vw;
+            if (pr == vr) {
+                resCoreParameters.cropRatio = 0.0f;
+            } else if (pr > vr) {
+                resCoreParameters.cropRatio = (1.0f - vr / pr) / 2.0f;
+            } else {
+                resCoreParameters.cropRatio = -(1.0f - pr / vr) / 2.0f;
+            }
         }
     }
 }

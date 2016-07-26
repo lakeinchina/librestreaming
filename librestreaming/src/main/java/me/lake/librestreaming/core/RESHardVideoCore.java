@@ -265,7 +265,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 } else {
                     directionFlag = resCoreParameters.backCameraDirectionMode;
                 }
-                camera2dTextureVerticesBuffer = GLHelper.getCamera2DTextureVerticesBuffer(directionFlag);
+                camera2dTextureVerticesBuffer = GLHelper.getCamera2DTextureVerticesBuffer(directionFlag,resCoreParameters.cropRatio);
             }
         }
 

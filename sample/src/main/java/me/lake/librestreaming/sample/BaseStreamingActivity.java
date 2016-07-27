@@ -81,7 +81,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         resClient = new RESClient();
         final RESConfig resConfig = RESConfig.obtain();
         resConfig.setFilterMode(filtermode);
-        resConfig.setTargetVideoSize(new Size(700, 480));
+        resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1024);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);

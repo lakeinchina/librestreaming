@@ -4118,6 +4118,13 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
 	      header -= cSize;
 	      hSize += cSize;
 	    }
+      //lake===start
+      if(t >= 0xffffff)
+      {
+        header -=4;
+        hSize +=4;
+      }
+      //lake==end
 	  *header = (0xc0 | c);
 	  if (cSize)
 	    {
@@ -4126,6 +4133,10 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
 	      if (cSize == 2)
 		header[2] = tmp >> 8;
 	    }
+      if(t >=0xffffff)
+      {
+        AMF_EncodeInt32(header + (cSize > 1 ? 2:1),header +(cSize>1?2:1)+4,t);
+      }
 	}
     }
   if (tbuf)

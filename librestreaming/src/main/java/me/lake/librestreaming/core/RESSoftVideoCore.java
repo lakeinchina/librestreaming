@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -342,7 +343,7 @@ public class RESSoftVideoCore implements RESVideoCore {
                 return;
             }
             sequenceNum++;
-            long nowTimeMs = System.currentTimeMillis();
+            long nowTimeMs = SystemClock.elapsedRealtime();
             int targetIndex = msg.arg1;
             boolean isFilterLocked = lockVideoFilter();
             if (isFilterLocked) {

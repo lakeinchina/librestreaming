@@ -5,6 +5,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 
+import java.util.Objects;
+
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.RESByteSpeedometer;
 import me.lake.librestreaming.core.RESFrameRateMeter;
@@ -101,6 +103,7 @@ public class RESRtmpSender {
         private String serverIpAddr = null;
         private int maxQueueLength;
         private int writeMsgNum = 0;
+        private final Object syncWriteMsgNum = new Object();
         private RESByteSpeedometer videoByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
         private RESByteSpeedometer audioByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
         private RESFrameRateMeter sendFrameRateMeter = new RESFrameRateMeter();
@@ -187,11 +190,16 @@ public class RESRtmpSender {
                     state = STATE.STOPPED;
                     break;
                 case MSG_WRITE:
-                    --writeMsgNum;
+                    synchronized (syncWriteMsgNum) {
+                        --writeMsgNum;
+                    }
                     if (state != STATE.RUNNING) {
                         break;
                     }
                     RESFlvData flvData = (RESFlvData) msg.obj;
+                    if (writeMsgNum >= (maxQueueLength * 2 / 3) && flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
+                        LogTools.d("senderQueue is crowded,abandon video");
+                    }
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res != 0) {
                         errorTime = 0;
@@ -228,16 +236,18 @@ public class RESRtmpSender {
         }
 
         public void sendFood(RESFlvData flvData, int type) {
-            //LAKETODO optimize
-            if (writeMsgNum <= maxQueueLength) {
-                this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
-                ++writeMsgNum;
-            } else {
-                if (flvData.isKeyframe()) {
+            synchronized (syncWriteMsgNum) {
+                //LAKETODO optimize
+                if (writeMsgNum <= maxQueueLength) {
                     this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
                     ++writeMsgNum;
                 } else {
-                    LogTools.d("senderQueue is full,abandon");
+                    if (flvData.isKeyframe()) {
+                        this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
+                        ++writeMsgNum;
+                    } else {
+                        LogTools.d("senderQueue is full,abandon");
+                    }
                 }
             }
         }

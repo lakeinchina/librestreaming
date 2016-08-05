@@ -10,7 +10,7 @@ import me.lake.librestreaming.rtmp.RESRtmpSender;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
- * Created by jizusheng on 26/05/16.
+ * Created by lakeinchina on 26/05/16.
  */
 public class AudioSenderThread extends Thread {
     private static final long WAIT_TIME = 5000;//1ms;
@@ -64,7 +64,7 @@ public class AudioSenderThread extends Thread {
                         ByteBuffer realData = dstAudioEncoder.getOutputBuffers()[eobIndex];
                         realData.position(eInfo.offset);
                         realData.limit(eInfo.offset + eInfo.size);
-                        sendRealData((eInfo.presentationTimeUs / 1000) - startTime, realData);
+                        sendRealData((eInfo.presentationTimeUs / 1000), realData);
                     }
                     dstAudioEncoder.releaseOutputBuffer(eobIndex, false);
                     break;

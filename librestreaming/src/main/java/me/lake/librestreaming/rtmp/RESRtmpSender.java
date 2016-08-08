@@ -225,13 +225,19 @@ public class RESRtmpSender {
 
         public void sendStart(String rtmpAddr) {
             this.removeMessages(MSG_START);
-            this.removeMessages(MSG_WRITE);
+            synchronized (syncWriteMsgNum) {
+                this.removeMessages(MSG_WRITE);
+                writeMsgNum=0;
+            }
             this.sendMessage(this.obtainMessage(MSG_START, rtmpAddr));
         }
 
         public void sendStop() {
             this.removeMessages(MSG_STOP);
-            this.removeMessages(MSG_WRITE);
+            synchronized (syncWriteMsgNum) {
+                this.removeMessages(MSG_WRITE);
+                writeMsgNum=0;
+            }
             this.sendEmptyMessage(MSG_STOP);
         }
 

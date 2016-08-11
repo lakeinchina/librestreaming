@@ -76,26 +76,45 @@ public class RESClient {
 
 
     /**
-     * start to stream
+     * start preview
      */
-    public void start() {
+    public void startPreview() {
         synchronized (SyncOp) {
+            videoClient.startPreview(dataCollecter);
+            LogTools.d("RESClient,startPreview()");
+        }
+    }
+    /**
+     * start streaming
+     */
+    public void startStreaming() {
+        synchronized (SyncOp) {
+            videoClient.startStreaming(dataCollecter);
             rtmpSender.start(coreParameters.rtmpAddr);
-            videoClient.start(dataCollecter);
             audioClient.start(dataCollecter);
-            LogTools.d("RESClient,start()");
+            LogTools.d("RESClient,startStreaming()");
         }
     }
 
     /**
-     * stop to stream
+     * stop streaming
      */
-    public void stop() {
+    public void stopStreaming() {
         synchronized (SyncOp) {
-            videoClient.stop();
+            videoClient.stopStreaming();
             audioClient.stop();
             rtmpSender.stop();
-            LogTools.d("RESClient,stop()");
+            LogTools.d("RESClient,stopStreaming()");
+        }
+    }
+
+    /**
+     * stop preview
+     */
+    public void stopPreview() {
+        synchronized (SyncOp) {
+            videoClient.stopPreview();
+            LogTools.d("RESClient,stopPreview()");
         }
     }
 

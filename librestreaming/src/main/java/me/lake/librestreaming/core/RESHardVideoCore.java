@@ -9,6 +9,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.util.Log;
 import android.view.Surface;
 
 import java.nio.FloatBuffer;
@@ -49,6 +50,7 @@ public class RESHardVideoCore implements RESVideoCore {
 
     final private Object syncResScreenShotListener = new Object();
     private RESScreenShotListener resScreenShotListener;
+    private boolean isStreaming = false;
 
     public RESHardVideoCore(RESCoreParameters parameters) {
         resCoreParameters = parameters;
@@ -58,6 +60,7 @@ public class RESHardVideoCore implements RESVideoCore {
 
     public void onFrameAvailable() {
         if (videoGLThread != null) {
+            Log.e("aa","123");
             videoGLThread.wakeup();
         }
     }
@@ -81,17 +84,14 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     @Override
-    public boolean start(RESFlvDataCollecter flvDataCollecter, SurfaceTexture camTex) {
+    public boolean startPreview(SurfaceTexture camTex) {
         synchronized (syncOp) {
             try {
                 if (dstVideoEncoder == null) {
                     dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
                 }
                 dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
                 videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface(), currentCamera);
-                dstVideoEncoder.start();
-                videoSenderThread.start();
                 videoGLThread.start();
             } catch (Exception e) {
                 LogTools.trace("RESHardVideoCore,start()failed", e);
@@ -99,6 +99,15 @@ public class RESHardVideoCore implements RESVideoCore {
             }
             return true;
         }
+    }
+
+    @Override
+    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
+        dstVideoEncoder.start();
+        videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
+        videoSenderThread.start();
+        isStreaming=true;
+        return true;
     }
 
     @Override
@@ -111,21 +120,32 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     @Override
-    public boolean stop() {
+    public boolean stopStreaming() {
+        videoSenderThread.quit();
+        try {
+            videoSenderThread.join();
+        } catch (InterruptedException e) {
+            LogTools.trace("RESHardVideoCore,stopStreaming()failed", e);
+            return false;
+        }
+        videoSenderThread = null;
+        dstVideoEncoder.stop();
+        isStreaming=false;
+        return true;
+    }
+
+    @Override
+    public boolean stopPreview() {
         synchronized (syncOp) {
             videoGLThread.quit();
-            videoSenderThread.quit();
             try {
                 videoGLThread.join();
-                videoSenderThread.join();
             } catch (InterruptedException e) {
-                LogTools.trace("RESHardVideoCore,stop()failed", e);
+                LogTools.trace("RESHardVideoCore,stopPreview()failed", e);
                 return false;
             }
-            dstVideoEncoder.stop();
-            dstVideoEncoder.release();
             videoGLThread = null;
-            videoSenderThread = null;
+            dstVideoEncoder.release();
             dstVideoEncoder = null;
             return true;
         }
@@ -305,8 +325,10 @@ public class RESHardVideoCore implements RESVideoCore {
             frameBuffer = fb[0];
             frameBufferTexture = fbt[0];
             while (!quit) {
+                Log.e("aa","startOneFrame");
                 GLHelper.currentMediaCodec(mediaCodecGLWapper);
                 waitCamera();
+                Log.e("aa", "startOneFrame1");
                 if (quit) {
                     break;
                 }
@@ -315,14 +337,21 @@ public class RESHardVideoCore implements RESVideoCore {
                         cameraTexture.updateTexImage();
                     }
                 }
+                Log.e("aa", "startOneFrame2");
                 drawSample2DFrameBuffer();
                 drawFrameBuffer();
-                drawMediaCodec();
+                Log.e("aa", "startOneFrame3");
+                if(isStreaming) {
+                    drawMediaCodec();
+                }
+                Log.e("aa", "startOneFrame4");
                 drawScreen();
+                Log.e("aa", "startOneFrame5");
                 drawFrameRateMeter.count();
                 synchronized (syncThread) {
                     frameNum--;
                 }
+                Log.e("aa", "stopOneFrame");
             }
             lockVideoFilter.lock();
             if (innerVideoFilter != null) {
@@ -438,16 +467,22 @@ public class RESHardVideoCore implements RESVideoCore {
             GLES20.glUniform1i(mediaCodecGLWapper.drawTextureLoc, 0);
             GLHelper.enableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc,
                     shapeVerticesBuffer, mediaCodecTextureVerticesBuffer);
+            Log.e("aa", "drawMediaCodec1");
             drawFrame();
+            Log.e("aa", "drawMediaCodec2");
             GLES20.glFinish();
+            Log.e("aa", "drawMediaCodec3");
             checkScreenShot();
+            Log.e("aa", "drawMediaCodec4");
             GLHelper.disableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             GLES20.glUseProgram(0);
             EGLExt.eglPresentationTimeANDROID(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface, cameraTexture.getTimestamp());
+            Log.e("aa", "drawMediaCodec5");
             if (!EGL14.eglSwapBuffers(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface)) {
                 throw new RuntimeException("eglSwapBuffers,failed!");
             }
+            Log.e("aa", "drawMediaCodec6");
         }
 
         private void drawScreen() {

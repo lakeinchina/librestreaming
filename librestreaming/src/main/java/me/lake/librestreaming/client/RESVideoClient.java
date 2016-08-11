@@ -134,22 +134,35 @@ public class RESVideoClient {
         return true;
     }
 
-    public boolean start(RESFlvDataCollecter flvDataCollecter) {
+    public boolean startPreview(RESFlvDataCollecter flvDataCollecter) {
         synchronized (syncOp) {
             if (!startVideo()) {
                 resCoreParameters.dump();
                 LogTools.e("RESVideoClient,start(),failed");
                 return false;
             }
-            videoCore.start(flvDataCollecter, camTexture);
+            videoCore.startPreview(camTexture);
+            return true;
+        }
+    }
+    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
+        synchronized (syncOp) {
+            videoCore.startStreaming(flvDataCollecter);
             return true;
         }
     }
 
-    public boolean stop() {
+    public boolean stopStreaming() {
+        synchronized (syncOp) {
+            videoCore.stopStreaming();
+            return true;
+        }
+    }
+
+    public boolean stopPreview() {
         synchronized (syncOp) {
             camera.stopPreview();
-            videoCore.stop();
+            videoCore.stopPreview();
             camTexture.release();
             return true;
         }

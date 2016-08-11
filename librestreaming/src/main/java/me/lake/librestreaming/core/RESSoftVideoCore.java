@@ -135,6 +135,16 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
     }
 
+    @Override
+    public boolean startPreview(SurfaceTexture camTex) {
+        return false;
+    }
+
+    @Override
+    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
+        return false;
+    }
+
     public void queueVideo(byte[] rawVideoFrame) {
         synchronized (syncOp) {
             if (runState != STATE.RUNING) {
@@ -163,7 +173,6 @@ public class RESSoftVideoCore implements RESVideoCore {
                 directionFlag);
     }
 
-    @Override
     public boolean start(RESFlvDataCollecter flvDataCollecter, SurfaceTexture camTex) {
         synchronized (syncOp) {
             if (runState != STATE.STOPPED && runState != STATE.PREPARED) {
@@ -195,6 +204,16 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public void updateCamTexture(SurfaceTexture camTex) {
+    }
+
+    @Override
+    public boolean stopStreaming() {
+        return false;
+    }
+
+    @Override
+    public boolean stopPreview() {
+        return false;
     }
 
     public boolean stop() {

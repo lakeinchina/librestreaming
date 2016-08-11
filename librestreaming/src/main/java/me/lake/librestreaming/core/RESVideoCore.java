@@ -13,11 +13,15 @@ public interface RESVideoCore {
     int OVERWATCH_TEXTURE_ID = 10;
     boolean prepare(RESConfig resConfig);
 
-    boolean start(RESFlvDataCollecter flvDataCollecter,SurfaceTexture camTex);
+    boolean startPreview(SurfaceTexture camTex);
+
+    boolean startStreaming(RESFlvDataCollecter flvDataCollecter);
 
     void updateCamTexture(SurfaceTexture camTex);
 
-    boolean stop();
+    boolean stopStreaming();
+
+    boolean stopPreview();
 
     boolean destroy();
 

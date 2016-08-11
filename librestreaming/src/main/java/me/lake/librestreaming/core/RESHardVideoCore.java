@@ -9,6 +9,9 @@ import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
 
@@ -44,7 +47,8 @@ public class RESHardVideoCore implements RESVideoCore {
     private final Object syncPreview = new Object();
     private final Object syncScreenCleanUp = new Object();
     private ScreenParams screenParams;
-    private VideoGLThread videoGLThread;
+    private HandlerThread videoGLHandlerThread;
+    private Handler videoGLHander;
     //sender
     private VideoSenderThread videoSenderThread;
 
@@ -59,9 +63,9 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     public void onFrameAvailable() {
-        if (videoGLThread != null) {
-            Log.e("aa","123");
-            videoGLThread.wakeup();
+        if (videoGLHandlerThread != null) {
+            Log.e("aa", "123");
+            videoGLHandlerThread.wakeup();
         }
     }
 
@@ -91,8 +95,8 @@ public class RESHardVideoCore implements RESVideoCore {
                     dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
                 }
                 dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                videoGLThread = new VideoGLThread(camTex, dstVideoEncoder.createInputSurface(), currentCamera);
-                videoGLThread.start();
+                videoGLHandlerThread = new HanderThr
+                videoGLHandlerThread.start();
             } catch (Exception e) {
                 LogTools.trace("RESHardVideoCore,start()failed", e);
                 return false;
@@ -103,18 +107,23 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
-        dstVideoEncoder.start();
+        try {
+            dstVideoEncoder.start();
+        } catch (Exception e) {
+            dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            dstVideoEncoder.start();
+        }
         videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
         videoSenderThread.start();
-        isStreaming=true;
+        isStreaming = true;
         return true;
     }
 
     @Override
     public void updateCamTexture(SurfaceTexture camTex) {
         synchronized (syncOp) {
-            if (videoGLThread != null) {
-                videoGLThread.updateCamTexture(camTex);
+            if (videoGLHandlerThread != null) {
+                videoGLHandlerThread.updateCamTexture(camTex);
             }
         }
     }
@@ -130,21 +139,21 @@ public class RESHardVideoCore implements RESVideoCore {
         }
         videoSenderThread = null;
         dstVideoEncoder.stop();
-        isStreaming=false;
+        isStreaming = false;
         return true;
     }
 
     @Override
     public boolean stopPreview() {
         synchronized (syncOp) {
-            videoGLThread.quit();
+            videoGLHandlerThread.quit();
             try {
-                videoGLThread.join();
+                videoGLHandlerThread.join();
             } catch (InterruptedException e) {
                 LogTools.trace("RESHardVideoCore,stopPreview()failed", e);
                 return false;
             }
-            videoGLThread = null;
+            videoGLHandlerThread = null;
             dstVideoEncoder.release();
             dstVideoEncoder = null;
             return true;
@@ -161,8 +170,8 @@ public class RESHardVideoCore implements RESVideoCore {
     @Override
     public void setCurrentCamera(int cameraIndex) {
         currentCamera = cameraIndex;
-        if (videoGLThread != null) {
-            videoGLThread.updateCameraIndex(currentCamera);
+        if (videoGLHandlerThread != null) {
+            videoGLHandlerThread.updateCameraIndex(currentCamera);
         }
     }
 
@@ -189,14 +198,14 @@ public class RESHardVideoCore implements RESVideoCore {
     @Override
     public void destroyPreview() {
         synchronized (syncOp) {
-            if (videoGLThread != null) {
+            if (videoGLHandlerThread != null) {
                 synchronized (syncScreenCleanUp) {
                     try {
                         synchronized (syncPreview) {
                             screenParams.surfaceTexture = null;
                         }
-                        if (!videoGLThread.screenCleaned) {
-                            videoGLThread.wakeup();
+                        if (!videoGLHandlerThread.screenCleaned) {
+                            videoGLHandlerThread.wakeup();
                             syncScreenCleanUp.wait();
                         }
                     } catch (InterruptedException ignored) {
@@ -231,7 +240,96 @@ public class RESHardVideoCore implements RESVideoCore {
     @Override
     public float getDrawFrameRate() {
         synchronized (syncOp) {
-            return videoGLThread == null ? 0 : videoGLThread.getDrawFrameRate();
+            return videoGLHandlerThread == null ? 0 : videoGLHandlerThread.getDrawFrameRate();
+        }
+    }
+
+    private class VideoGLHandler extends Handler {
+        static final int WHAT_FRAME = 1;
+        static final int WHAT_CREATE_PREVIEW = 2;
+        static final int WHAT_DESTROY_PREVIEW = 3;
+        static final int WHAT_START_STREAMING = 4;
+        static final int WHAT_STOP_STREAMING = 5;
+        //=========================
+        public static final int FILTER_LOCK_TOLERATION = 3;//3ms
+        private boolean quit;
+        private final Object syncThread = new Object();
+        public boolean screenCleaned = false;
+        private int frameNum = 0;
+        //gl stuff
+        private Surface mediaInputSurface;
+        private SurfaceTexture cameraTexture;
+        private MediaCodecGLWapper mediaCodecGLWapper;
+        private ScreenGLWapper screenGLWapper;
+        private int sample2DFrameBuffer;
+        private int sample2DFrameBufferTexture;
+        private int frameBuffer;
+        private int frameBufferTexture;
+        private FloatBuffer shapeVerticesBuffer;
+        private FloatBuffer mediaCodecTextureVerticesBuffer;
+        private FloatBuffer screenTextureVerticesBuffer;
+        private int currCamera;
+        private final Object syncCameraTextureVerticesBuffer = new Object();
+        private FloatBuffer camera2dTextureVerticesBuffer;
+        private FloatBuffer cameraTextureVerticesBuffer;
+        private ShortBuffer drawIndecesBuffer;
+        private BaseHardVideoFilter innerVideoFilter = null;
+        private RESFrameRateMeter drawFrameRateMeter;
+        private int directionFlag;
+
+        public VideoGLHandler(SurfaceTexture camTexture, int cameraIndex)
+        {
+            screenCleaned = false;
+            cameraTexture = camTexture;
+            screenGLWapper = null;
+            mediaCodecGLWapper = null;
+            quit = false;
+            currCamera = cameraIndex;
+            drawFrameRateMeter = new RESFrameRateMeter();
+            initBuffer();
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case WHAT_FRAME: {
+                }
+                break;
+                case WHAT_CREATE_PREVIEW: {
+                }
+                break;
+                case WHAT_DESTROY_PREVIEW: {
+
+                }
+                break;
+                case WHAT_START_STREAMING: {
+
+                }
+                break;
+                case WHAT_STOP_STREAMING: {
+                }
+                break;
+                default:
+            }
+        }
+        private void initBuffer() {
+            shapeVerticesBuffer = GLHelper.getShapeVerticesBuffer();
+            mediaCodecTextureVerticesBuffer = GLHelper.getMediaCodecTextureVerticesBuffer();
+            screenTextureVerticesBuffer = GLHelper.getScreenTextureVerticesBuffer();
+            updateCameraIndex(currCamera);
+            drawIndecesBuffer = GLHelper.getDrawIndecesBuffer();
+            cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer();
+        }
+        public void updateCameraIndex(int cameraIndex) {
+            synchronized (syncCameraTextureVerticesBuffer) {
+                currCamera = cameraIndex;
+                if (currCamera == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                    directionFlag = resCoreParameters.frontCameraDirectionMode;
+                } else {
+                    directionFlag = resCoreParameters.backCameraDirectionMode;
+                }
+                camera2dTextureVerticesBuffer = GLHelper.getCamera2DTextureVerticesBuffer(directionFlag, resCoreParameters.cropRatio);
+            }
         }
     }
 
@@ -277,17 +375,6 @@ public class RESHardVideoCore implements RESVideoCore {
             return drawFrameRateMeter.getFps();
         }
 
-        public void updateCameraIndex(int cameraIndex) {
-            synchronized (syncCameraTextureVerticesBuffer) {
-                currCamera = cameraIndex;
-                if (currCamera == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    directionFlag = resCoreParameters.frontCameraDirectionMode;
-                } else {
-                    directionFlag = resCoreParameters.backCameraDirectionMode;
-                }
-                camera2dTextureVerticesBuffer = GLHelper.getCamera2DTextureVerticesBuffer(directionFlag,resCoreParameters.cropRatio);
-            }
-        }
 
         public void updateCamTexture(SurfaceTexture surfaceTexture) {
             if (surfaceTexture != cameraTexture) {
@@ -325,7 +412,7 @@ public class RESHardVideoCore implements RESVideoCore {
             frameBuffer = fb[0];
             frameBufferTexture = fbt[0];
             while (!quit) {
-                Log.e("aa","startOneFrame");
+                Log.e("aa", "startOneFrame");
                 GLHelper.currentMediaCodec(mediaCodecGLWapper);
                 waitCamera();
                 Log.e("aa", "startOneFrame1");
@@ -341,7 +428,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 drawSample2DFrameBuffer();
                 drawFrameBuffer();
                 Log.e("aa", "startOneFrame3");
-                if(isStreaming) {
+                if (isStreaming) {
                     drawMediaCodec();
                 }
                 Log.e("aa", "startOneFrame4");
@@ -522,15 +609,6 @@ public class RESHardVideoCore implements RESVideoCore {
                     throw new RuntimeException("eglSwapBuffers,failed!");
                 }
             }
-        }
-
-        private void initBuffer() {
-            shapeVerticesBuffer = GLHelper.getShapeVerticesBuffer();
-            mediaCodecTextureVerticesBuffer = GLHelper.getMediaCodecTextureVerticesBuffer();
-            screenTextureVerticesBuffer = GLHelper.getScreenTextureVerticesBuffer();
-            updateCameraIndex(currCamera);
-            drawIndecesBuffer = GLHelper.getDrawIndecesBuffer();
-            cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer();
         }
 
         private void initMediaCodecProgram(MediaCodecGLWapper wapper) {

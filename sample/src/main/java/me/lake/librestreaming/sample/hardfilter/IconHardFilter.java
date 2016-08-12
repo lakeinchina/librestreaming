@@ -59,11 +59,13 @@ public class IconHardFilter extends BaseHardVideoFilter {
 
     protected final Object syncBitmap = new Object();
     protected Bitmap iconBitmap;
+    protected boolean needUpdate;
     protected RectF iconRectF;
     protected Rect iconRect;
 
     public IconHardFilter(@NonNull Bitmap _bitmap,@NonNull Rect _rect) {
         iconBitmap = _bitmap;
+        needUpdate=true;
         iconRectF = new RectF();
         iconRect = _rect;
     }
@@ -72,6 +74,7 @@ public class IconHardFilter extends BaseHardVideoFilter {
         synchronized (syncBitmap) {
             if (_bitmap != null) {
                 iconBitmap = _bitmap;
+                needUpdate=true;
             }
             if (_rect != null) {
                 iconRect = _rect;
@@ -96,13 +99,12 @@ public class IconHardFilter extends BaseHardVideoFilter {
     @Override
     public void onDraw(int cameraTexture, int targetFrameBuffer, FloatBuffer shapeBuffer, FloatBuffer textrueBuffer) {
         synchronized (syncBitmap) {
-            if (iconBitmap != null) {
+            if (needUpdate) {
                 if(imageTexture!=GLESTools.NO_TEXTURE) {
                     GLES20.glDeleteTextures(1, new int[]{imageTexture}, 0);
                 }
                 imageTexture = GLESTools.loadTexture(iconBitmap, GLESTools.NO_TEXTURE);
             }
-            iconBitmap = null;
         }
         iconRectF.top = iconRect.top / (float) SIZE_HEIGHT;
         iconRectF.bottom = iconRect.bottom / (float) SIZE_HEIGHT;

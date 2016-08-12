@@ -244,7 +244,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         if (resClient != null) {
             resClient.stopPreview();
         }
-        return true;
+        return false;
     }
 
     @Override

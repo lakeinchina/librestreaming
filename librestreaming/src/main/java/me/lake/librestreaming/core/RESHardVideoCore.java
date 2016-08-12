@@ -150,7 +150,7 @@ public class RESHardVideoCore implements RESVideoCore {
         videoSenderThread = null;
         dstVideoEncoder.stop();
         dstVideoEncoder.release();
-        dstVideoEncoder=null;
+        dstVideoEncoder = null;
         return true;
     }
 
@@ -220,7 +220,10 @@ public class RESHardVideoCore implements RESVideoCore {
         private final Object syncFrameNum = new Object();
         private int frameNum = 0;
         //gl stuff
+        private final Object syncCameraTex = new Object();
         private SurfaceTexture cameraTexture;
+
+        private SurfaceTexture screenTexture;
 
         private MediaCodecGLWapper mediaCodecGLWapper;
         private ScreenGLWapper screenGLWapper;
@@ -257,8 +260,14 @@ public class RESHardVideoCore implements RESVideoCore {
                 case WHAT_FRAME: {
                     GLHelper.makeCurrent(offScreenGLWapper);
                     synchronized (syncFrameNum) {
-                        cameraTexture.updateTexImage();
-                        --frameNum;
+                        synchronized (syncCameraTex) {
+                            if (cameraTexture != null) {
+                                cameraTexture.updateTexImage();
+                                --frameNum;
+                            } else {
+                                break;
+                            }
+                        }
 //                        if (frameNum >= 1) {
 //                            break;
 //                        }
@@ -272,6 +281,12 @@ public class RESHardVideoCore implements RESVideoCore {
                 }
                 break;
                 case WHAT_UNINIT: {
+                    lockVideoFilter.lock();
+                    if (innerVideoFilter != null) {
+                        innerVideoFilter.onDestroy();
+                        innerVideoFilter = null;
+                    }
+                    lockVideoFilter.unlock();
                     uninitOffScreenGL();
                 }
                 break;
@@ -504,6 +519,7 @@ public class RESHardVideoCore implements RESVideoCore {
 
         private void initScreenGL(SurfaceTexture screenSurfaceTexture) {
             if (screenGLWapper == null) {
+                screenTexture = screenSurfaceTexture;
                 screenGLWapper = new ScreenGLWapper();
                 GLHelper.initScreenGL(screenGLWapper, offScreenGLWapper.eglContext, screenSurfaceTexture);
                 GLHelper.makeCurrent(screenGLWapper);
@@ -525,6 +541,8 @@ public class RESHardVideoCore implements RESVideoCore {
                 EGL14.eglDestroyContext(screenGLWapper.eglDisplay, screenGLWapper.eglContext);
                 EGL14.eglTerminate(screenGLWapper.eglDisplay);
                 EGL14.eglMakeCurrent(screenGLWapper.eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+                screenTexture.release();
+                screenTexture = null;
                 screenGLWapper = null;
             } else {
                 throw new IllegalStateException("unInitScreenGL without initScreenGL");
@@ -588,14 +606,16 @@ public class RESHardVideoCore implements RESVideoCore {
 
 
         public void updateCamTexture(SurfaceTexture surfaceTexture) {
-            if (surfaceTexture != cameraTexture) {
-                cameraTexture = surfaceTexture;
-                frameNum = 0;
+            synchronized (syncCameraTex) {
+                if (surfaceTexture != cameraTexture) {
+                    cameraTexture = surfaceTexture;
+                    frameNum = 0;
+                }
             }
         }
 
         public void addFrameNum() {
-            synchronized (syncPreview) {
+            synchronized (syncFrameNum) {
                 ++frameNum;
                 this.sendEmptyMessage(VideoGLHandler.WHAT_FRAME);
             }

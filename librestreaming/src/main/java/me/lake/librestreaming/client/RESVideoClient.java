@@ -164,6 +164,7 @@ public class RESVideoClient {
                 videoCore.stopPreview();
                 if (!isStreaming) {
                     camera.stopPreview();
+                    videoCore.updateCamTexture(null);
                     camTexture.release();
                 }
             }
@@ -194,6 +195,7 @@ public class RESVideoClient {
                 videoCore.stopStreaming();
                 if (!isPreviewing) {
                     camera.stopPreview();
+                    videoCore.updateCamTexture(null);
                     camTexture.release();
                 }
             }

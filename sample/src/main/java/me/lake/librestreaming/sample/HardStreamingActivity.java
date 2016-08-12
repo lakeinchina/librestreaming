@@ -35,6 +35,7 @@ import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.sample.hardfilter.ColorMixHardFilter;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
 import me.lake.librestreaming.sample.hardfilter.IconHardFilter;
+import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
@@ -78,6 +79,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("SobelEdgeDetection", new SobelEdgeDetectionHardVideoFilter()));
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("Icon",new IconHardFilter(bitmap,new Rect(100,100,200,200))));
+        filterItems.add(new FilterItem("SeaScape",new SeaScapeFilter()));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<GPUImagePixelationFilter>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();

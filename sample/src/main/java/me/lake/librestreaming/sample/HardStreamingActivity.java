@@ -2,6 +2,7 @@ package me.lake.librestreaming.sample;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -33,6 +34,8 @@ import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.sample.hardfilter.ColorMixHardFilter;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
+import me.lake.librestreaming.sample.hardfilter.IconHardFilter;
+import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
@@ -74,6 +77,9 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("DifferenceBlend", new DifferenceBlendFilterHard(bitmap)));
         filterItems.add(new FilterItem("SobelEdgeDetection", new SobelEdgeDetectionHardVideoFilter()));
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        filterItems.add(new FilterItem("Icon",new IconHardFilter(bitmap,new Rect(100,100,200,200))));
+        filterItems.add(new FilterItem("SeaScape",new SeaScapeFilter()));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<GPUImagePixelationFilter>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();
@@ -119,6 +125,9 @@ public class HardStreamingActivity extends BaseStreamingActivity {
                     }
                     if (filter instanceof ColorMixHardFilter) {
                         ((ColorMixHardFilter)filter).setMixColor((float)(0.5+0.5*Math.sin(Math.PI*5*(progress/100.0))),(float)(0.5+0.5*Math.sin(Math.PI*2*(progress/100.0))),(float)(0.5+0.5*Math.sin(Math.PI*7*(progress/100.0))),0.3f);
+                    }
+                    if (filter instanceof IconHardFilter) {
+                        ((IconHardFilter) filter).updateIcon(null, new Rect(progress*2+100, 100, progress*2+200, 200));
                     }
                 }
                 resClient.releaseHardVideoFilter();

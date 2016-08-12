@@ -52,7 +52,8 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
-    protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
+//    protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
+    protected String rtmpaddr = "rtmp://upload.rtmp.kukuplay.com/live/a26c42";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override

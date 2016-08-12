@@ -13,7 +13,10 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import javax.microedition.khronos.egl.EGL10;
+
 import me.lake.librestreaming.model.MediaCodecGLWapper;
+import me.lake.librestreaming.model.OffScreenGLWapper;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.ScreenGLWapper;
 import me.lake.librestreaming.tools.GLESTools;
@@ -104,7 +107,53 @@ public class GLHelper {
     public static int COORDS_PER_VERTEX = 2;
     public static int TEXTURE_COORDS_PER_VERTEX = 2;
 
-    public static void initMediaCodecGL(MediaCodecGLWapper wapper, Surface mediaInputSurface) {
+    public static void initOffScreenGL(OffScreenGLWapper wapper) {
+        wapper.eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        if (EGL14.EGL_NO_DISPLAY == wapper.eglDisplay) {
+            throw new RuntimeException("eglGetDisplay,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+        int versions[] = new int[2];
+        if (!EGL14.eglInitialize(wapper.eglDisplay, versions, 0, versions, 1)) {
+            throw new RuntimeException("eglInitialize,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+        int configsCount[] = new int[1];
+        EGLConfig configs[] = new EGLConfig[1];
+        int configSpec[] = new int[]{
+                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+                EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_DEPTH_SIZE, 0,
+                EGL14.EGL_STENCIL_SIZE, 0,
+                EGL14.EGL_NONE
+        };
+        EGL14.eglChooseConfig(wapper.eglDisplay, configSpec, 0, configs, 0, 1, configsCount, 0);
+        if (configsCount[0] <= 0) {
+            throw new RuntimeException("eglChooseConfig,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+        wapper.eglConfig = configs[0];
+        int[] surfaceAttribs = {
+                EGL10.EGL_WIDTH, 1,
+                EGL10.EGL_HEIGHT, 1,
+                EGL14.EGL_NONE
+        };
+        int contextSpec[] = new int[]{
+                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+                EGL14.EGL_NONE
+        };
+        wapper.eglContext = EGL14.eglCreateContext(wapper.eglDisplay, wapper.eglConfig, EGL14.EGL_NO_CONTEXT, contextSpec, 0);
+        if (EGL14.EGL_NO_CONTEXT == wapper.eglContext) {
+            throw new RuntimeException("eglCreateContext,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+        int[] values = new int[1];
+        EGL14.eglQueryContext(wapper.eglDisplay, wapper.eglContext, EGL14.EGL_CONTEXT_CLIENT_VERSION, values, 0);
+        wapper.eglSurface = EGL14.eglCreatePbufferSurface(wapper.eglDisplay, wapper.eglConfig, surfaceAttribs, 0);
+        if (null == wapper.eglSurface || EGL14.EGL_NO_SURFACE == wapper.eglSurface) {
+            throw new RuntimeException("eglCreateWindowSurface,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+    }
+
+    public static void initMediaCodecGL(MediaCodecGLWapper wapper, EGLContext sharedContext, Surface mediaInputSurface) {
         wapper.eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (EGL14.EGL_NO_DISPLAY == wapper.eglDisplay) {
             throw new RuntimeException("eglGetDisplay,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
@@ -137,7 +186,7 @@ public class GLHelper {
                 EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
                 EGL14.EGL_NONE
         };
-        wapper.eglContext = EGL14.eglCreateContext(wapper.eglDisplay, wapper.eglConfig, EGL14.EGL_NO_CONTEXT, contextSpec, 0);
+        wapper.eglContext = EGL14.eglCreateContext(wapper.eglDisplay, wapper.eglConfig, sharedContext, contextSpec, 0);
         if (EGL14.EGL_NO_CONTEXT == wapper.eglContext) {
             throw new RuntimeException("eglCreateContext,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }
@@ -193,13 +242,19 @@ public class GLHelper {
         }
     }
 
-    public static void currentMediaCodec(MediaCodecGLWapper wapper) {
+    public static void makeCurrent(OffScreenGLWapper wapper) {
         if (!EGL14.eglMakeCurrent(wapper.eglDisplay, wapper.eglSurface, wapper.eglSurface, wapper.eglContext)) {
             throw new RuntimeException("eglMakeCurrent,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }
     }
 
-    public static void currentScreen(ScreenGLWapper wapper) {
+    public static void makeCurrent(MediaCodecGLWapper wapper) {
+        if (!EGL14.eglMakeCurrent(wapper.eglDisplay, wapper.eglSurface, wapper.eglSurface, wapper.eglContext)) {
+            throw new RuntimeException("eglMakeCurrent,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+    }
+
+    public static void makeCurrent(ScreenGLWapper wapper) {
         if (!EGL14.eglMakeCurrent(wapper.eglDisplay, wapper.eglSurface, wapper.eglSurface, wapper.eglContext)) {
             throw new RuntimeException("eglMakeCurrent,failed:" + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }

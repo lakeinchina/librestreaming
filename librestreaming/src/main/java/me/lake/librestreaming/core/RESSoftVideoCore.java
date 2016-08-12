@@ -136,11 +136,6 @@ public class RESSoftVideoCore implements RESVideoCore {
     }
 
     @Override
-    public boolean startPreview(SurfaceTexture camTex) {
-        return false;
-    }
-
-    @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
         return false;
     }
@@ -211,10 +206,6 @@ public class RESSoftVideoCore implements RESVideoCore {
         return false;
     }
 
-    @Override
-    public boolean stopPreview() {
-        return false;
-    }
 
     public boolean stop() {
         synchronized (syncOp) {
@@ -259,10 +250,10 @@ public class RESSoftVideoCore implements RESVideoCore {
     }
 
     @Override
-    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+    public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
             if (previewRender != null) {
-                throw new RuntimeException("createPreview without destroy previous");
+                throw new RuntimeException("startPreview without destroy previous");
             }
             switch (resCoreParameters.renderingMode) {
                 case RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
@@ -287,17 +278,17 @@ public class RESSoftVideoCore implements RESVideoCore {
     public void updatePreview(int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
             if (previewRender == null) {
-                throw new RuntimeException("updatePreview without createPreview");
+                throw new RuntimeException("updatePreview without startPreview");
             }
             previewRender.update(visualWidth, visualHeight);
         }
     }
 
     @Override
-    public void destroyPreview() {
+    public void stopPreview() {
         synchronized (syncPreview) {
             if (previewRender == null) {
-                throw new RuntimeException("destroyPreview without createPreview");
+                throw new RuntimeException("stopPreview without startPreview");
             }
             previewRender.destroy();
             previewRender = null;

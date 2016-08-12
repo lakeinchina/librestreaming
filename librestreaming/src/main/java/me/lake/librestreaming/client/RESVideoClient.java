@@ -29,11 +29,15 @@ public class RESVideoClient {
     private int cameraNum;
     private int currentCameraIndex;
     private RESVideoCore videoCore;
+    private boolean isStreaming;
+    private boolean isPreviewing;
 
     public RESVideoClient(RESCoreParameters parameters) {
         resCoreParameters = parameters;
         cameraNum = Camera.getNumberOfCameras();
         currentCameraIndex = Camera.CameraInfo.CAMERA_FACING_BACK;
+        isStreaming = false;
+        isPreviewing = false;
     }
 
     public boolean prepare(RESConfig resConfig) {
@@ -67,10 +71,10 @@ public class RESVideoClient {
                     videoCore = new RESHardVideoCore(resCoreParameters);
                     break;
             }
-            videoCore.setCurrentCamera(currentCameraIndex);
             if (!videoCore.prepare(resConfig)) {
                 return false;
             }
+            videoCore.setCurrentCamera(currentCameraIndex);
             prepareVideo();
             return true;
         }
@@ -134,39 +138,70 @@ public class RESVideoClient {
         return true;
     }
 
-    public boolean startPreview(RESFlvDataCollecter flvDataCollecter) {
+    public boolean startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         synchronized (syncOp) {
-            if (!startVideo()) {
-                resCoreParameters.dump();
-                LogTools.e("RESVideoClient,start(),failed");
-                return false;
+            if (!isStreaming && !isPreviewing) {
+                if (!startVideo()) {
+                    resCoreParameters.dump();
+                    LogTools.e("RESVideoClient,start(),failed");
+                    return false;
+                }
+                videoCore.updateCamTexture(camTexture);
             }
-            videoCore.startPreview(camTexture);
+            videoCore.startPreview(surfaceTexture, visualWidth, visualHeight);
+            isPreviewing = true;
             return true;
         }
     }
+
+    public void updatePreview(int visualWidth, int visualHeight) {
+        videoCore.updatePreview(visualWidth, visualHeight);
+    }
+
+    public boolean stopPreview() {
+        synchronized (syncOp) {
+            if (isPreviewing) {
+                videoCore.stopPreview();
+                if (!isStreaming) {
+                    camera.stopPreview();
+                    camTexture.release();
+                }
+            }
+            isPreviewing = false;
+            return true;
+        }
+    }
+
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
         synchronized (syncOp) {
+            if (!isStreaming && !isPreviewing) {
+                if (!startVideo()) {
+                    resCoreParameters.dump();
+                    LogTools.e("RESVideoClient,start(),failed");
+                    return false;
+                }
+                videoCore.updateCamTexture(camTexture);
+            }
             videoCore.startStreaming(flvDataCollecter);
+            isStreaming = true;
             return true;
         }
     }
 
     public boolean stopStreaming() {
         synchronized (syncOp) {
-            videoCore.stopStreaming();
+            if (isStreaming) {
+                videoCore.stopStreaming();
+                if (!isPreviewing) {
+                    camera.stopPreview();
+                    camTexture.release();
+                }
+            }
+            isStreaming = false;
             return true;
         }
     }
 
-    public boolean stopPreview() {
-        synchronized (syncOp) {
-            camera.stopPreview();
-            videoCore.stopPreview();
-            camTexture.release();
-            return true;
-        }
-    }
 
     public boolean destroy() {
         synchronized (syncOp) {
@@ -176,18 +211,6 @@ public class RESVideoClient {
             camera = null;
             return true;
         }
-    }
-
-    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-        videoCore.createPreview(surfaceTexture, visualWidth, visualHeight);
-    }
-
-    public void updatePreview(int visualWidth, int visualHeight) {
-        videoCore.updatePreview(visualWidth, visualHeight);
-    }
-
-    public void destroyPreview() {
-        videoCore.destroyPreview();
     }
 
     public boolean swapCamera() {

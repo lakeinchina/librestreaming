@@ -76,15 +76,6 @@ public class RESClient {
 
 
     /**
-     * start preview
-     */
-    public void startPreview() {
-        synchronized (SyncOp) {
-            videoClient.startPreview(dataCollecter);
-            LogTools.d("RESClient,startPreview()");
-        }
-    }
-    /**
      * start streaming
      */
     public void startStreaming() {
@@ -109,16 +100,6 @@ public class RESClient {
     }
 
     /**
-     * stop preview
-     */
-    public void stopPreview() {
-        synchronized (SyncOp) {
-            videoClient.stopPreview();
-            LogTools.d("RESClient,stopPreview()");
-        }
-    }
-
-    /**
      * clean up
      */
     public void destroy() {
@@ -138,9 +119,9 @@ public class RESClient {
      *
      * @param surfaceTexture to rendering preview
      */
-    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-        videoClient.createPreview(surfaceTexture, visualWidth, visualHeight);
-        LogTools.d("RESClient,createPreview()");
+    public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+        videoClient.startPreview(surfaceTexture, visualWidth, visualHeight);
+        LogTools.d("RESClient,startPreview()");
     }
 
     public void updatePreview(int visualWidth, int visualHeight) {
@@ -148,14 +129,13 @@ public class RESClient {
         LogTools.d("RESClient,updatePreview()");
     }
 
-    public void destroyPreview() {
-        videoClient.destroyPreview();
-        LogTools.d("RESClient,destroyPreview()");
+    public void stopPreview() {
+        videoClient.stopPreview();
+        LogTools.d("RESClient,stopPreview()");
     }
 
     /**
      * change camera on running.<br/>
-     * call it AFTER {@link #start()} & BEFORE {@link #stop()}
      */
     public boolean swapCamera() {
         synchronized (SyncOp) {

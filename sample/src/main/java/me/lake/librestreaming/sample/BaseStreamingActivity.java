@@ -52,8 +52,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
-//    protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
-    protected String rtmpaddr = "rtmp://upload.rtmp.kukuplay.com/live/a26c42";
+    protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override
@@ -172,13 +171,11 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     protected void onResume() {
         super.onResume();
-        resClient.startPreview();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        resClient.stopPreview();
     }
 
     @Override
@@ -231,7 +228,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         if (resClient != null) {
-            resClient.createPreview(surface, width, height);
+            resClient.startPreview(surface, width, height);
         }
     }
 
@@ -245,7 +242,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         if (resClient != null) {
-            resClient.destroyPreview();
+            resClient.stopPreview();
         }
         return true;
     }

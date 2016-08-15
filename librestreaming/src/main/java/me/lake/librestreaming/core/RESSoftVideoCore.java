@@ -39,18 +39,10 @@ public class RESSoftVideoCore implements RESVideoCore {
     private final Object syncOp = new Object();
     private SurfaceTexture cameraTexture;
 
-    //STATE
-    private enum STATE {
-        IDLE,
-        PREPARED,
-        RUNING,
-        STOPPED,
-        DESTROYED
-    }
-
-    private STATE runState;
     private int currentCamera;
     private MediaCodec dstVideoEncoder;
+    private boolean isEncoderStarted;
+    private final Object syncDstVideoEncoder=new Object();
     private MediaFormat dstVideoFormat;
     //render
     private final Object syncPreview = new Object();
@@ -80,7 +72,6 @@ public class RESSoftVideoCore implements RESVideoCore {
         resCoreParameters = parameters;
         lockVideoFilter = new ReentrantLock(false);
         videoFilter = null;
-        runState = STATE.IDLE;
     }
 
     public void setCurrentCamera(int camIndex) {
@@ -109,10 +100,13 @@ public class RESSoftVideoCore implements RESVideoCore {
             resCoreParameters.mediacodecAVCFrameRate = 30;
             resCoreParameters.mediacodecAVCIFrameInterval = 5;
             dstVideoFormat = new MediaFormat();
-            dstVideoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
-            if (dstVideoEncoder == null) {
-                LogTools.e("create Video MediaCodec failed");
-                return false;
+            synchronized (syncDstVideoEncoder) {
+                dstVideoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
+                isEncoderStarted=false;
+                if (dstVideoEncoder == null) {
+                    LogTools.e("create Video MediaCodec failed");
+                    return false;
+                }
             }
             //video
             int videoWidth = resCoreParameters.videoWidth;
@@ -123,6 +117,10 @@ public class RESSoftVideoCore implements RESVideoCore {
             for (int i = 0; i < videoQueueNum; i++) {
                 orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, orignVideoBuffSize);
             }
+            for (RESVideoBuff buff : orignVideoBuffs) {
+                buff.isReadyToFill = true;
+            }
+            lastVideoQueueBuffIndex = 0;
             resCoreParameters.previewBufferSize = orignVideoBuffSize;
             orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
                     BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
@@ -130,69 +128,31 @@ public class RESSoftVideoCore implements RESVideoCore {
                     BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
             suitable4VideoEncoderBuff = new RESVideoBuff(resCoreParameters.mediacodecAVCColorFormat,
                     BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.mediacodecAVCColorFormat));
-            runState = STATE.PREPARED;
+            videoFilterHandlerThread = new HandlerThread("videoFilterHandlerThread");
+            videoFilterHandlerThread.start();
+            videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
             return true;
         }
     }
 
     @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
-        return false;
-    }
-
-    public void queueVideo(byte[] rawVideoFrame) {
         synchronized (syncOp) {
-            if (runState != STATE.RUNING) {
-                return;
-            }
-            int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
-            if (orignVideoBuffs[targetIndex].isReadyToFill) {
-                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
-                acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
-                orignVideoBuffs[targetIndex].isReadyToFill = false;
-                lastVideoQueueBuffIndex = targetIndex;
-                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
-            } else {
-                LogTools.d("queueVideo,abandon,targetIndex" + targetIndex);
-            }
-        }
-    }
-
-
-    private void acceptVideo(byte[] src, byte[] dst) {
-        int directionFlag = currentCamera == Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
-        ColorHelper.NV21Transform(src,
-                dst,
-                resCoreParameters.previewVideoWidth,
-                resCoreParameters.previewVideoHeight,
-                directionFlag);
-    }
-
-    public boolean start(RESFlvDataCollecter flvDataCollecter, SurfaceTexture camTex) {
-        synchronized (syncOp) {
-            if (runState != STATE.STOPPED && runState != STATE.PREPARED) {
-                throw new IllegalStateException("start restreaming without prepared or destroyed");
-            }
             try {
-                for (RESVideoBuff buff : orignVideoBuffs) {
-                    buff.isReadyToFill = true;
+                synchronized (syncDstVideoEncoder) {
+                    if (dstVideoEncoder == null) {
+                        dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+                    }
+                    dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                    dstVideoEncoder.start();
+                    isEncoderStarted=true;
                 }
-                if (dstVideoEncoder == null) {
-                    dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
-                }
-                dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                dstVideoEncoder.start();
-                lastVideoQueueBuffIndex = 0;
-                videoFilterHandlerThread = new HandlerThread("videoFilterHandlerThread");
-                videoFilterHandlerThread.start();
-                videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
                 videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
                 videoSenderThread.start();
             } catch (Exception e) {
                 LogTools.trace("RESVideoClient.start()failed", e);
                 return false;
             }
-            runState = STATE.RUNING;
             return true;
         }
     }
@@ -203,48 +163,35 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public boolean stopStreaming() {
-        return false;
-    }
-
-
-    public boolean stop() {
         synchronized (syncOp) {
-            if (runState != STATE.RUNING) {
-                throw new IllegalStateException("stop restreaming without start or destroyed");
-            }
-            videoFilterHandler.removeCallbacksAndMessages(null);
-            videoFilterHandlerThread.quit();
             videoSenderThread.quit();
             try {
-                videoFilterHandlerThread.join();
                 videoSenderThread.join();
             } catch (InterruptedException e) {
                 LogTools.trace("RESCore", e);
                 return false;
             }
-            dstVideoEncoder.stop();
-            dstVideoEncoder.release();
-            dstVideoEncoder = null;
+            synchronized (syncDstVideoEncoder) {
+                dstVideoEncoder.stop();
+                dstVideoEncoder.release();
+                dstVideoEncoder = null;
+                isEncoderStarted=false;
+            }
             videoSenderThread = null;
-            videoFilterHandlerThread = null;
-            videoFilterHandler = null;
-            runState = STATE.STOPPED;
             return true;
         }
     }
 
+
+
     @Override
     public boolean destroy() {
         synchronized (syncOp) {
-            if (runState != STATE.STOPPED && runState != STATE.PREPARED) {
-                throw new IllegalStateException("destroy restreaming without stop");
-            }
             lockVideoFilter.lock();
             if (videoFilter != null) {
                 videoFilter.onDestroy();
             }
             lockVideoFilter.unlock();
-            runState = STATE.DESTROYED;
             return true;
         }
     }
@@ -293,6 +240,31 @@ public class RESSoftVideoCore implements RESVideoCore {
             previewRender.destroy();
             previewRender = null;
         }
+    }
+
+    public void queueVideo(byte[] rawVideoFrame) {
+        synchronized (syncOp) {
+            int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
+            if (orignVideoBuffs[targetIndex].isReadyToFill) {
+                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+                acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
+                orignVideoBuffs[targetIndex].isReadyToFill = false;
+                lastVideoQueueBuffIndex = targetIndex;
+                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
+            } else {
+                LogTools.d("queueVideo,abandon,targetIndex" + targetIndex);
+            }
+        }
+    }
+
+
+    private void acceptVideo(byte[] src, byte[] dst) {
+        int directionFlag = currentCamera == Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
+        ColorHelper.NV21Transform(src,
+                dst,
+                resCoreParameters.previewVideoWidth,
+                resCoreParameters.previewVideoHeight,
+                directionFlag);
     }
 
     public BaseSoftVideoFilter acquireVideoFilter() {
@@ -407,14 +379,18 @@ public class RESSoftVideoCore implements RESVideoCore {
             }
             drawFrameRateMeter.count();
             //suitable4VideoEncoderBuff is ready
-            int eibIndex = dstVideoEncoder.dequeueInputBuffer(-1);
-            if (eibIndex >= 0) {
-                ByteBuffer dstVideoEncoderIBuffer = dstVideoEncoder.getInputBuffers()[eibIndex];
-                dstVideoEncoderIBuffer.position(0);
-                dstVideoEncoderIBuffer.put(suitable4VideoEncoderBuff.buff, 0, suitable4VideoEncoderBuff.buff.length);
-                dstVideoEncoder.queueInputBuffer(eibIndex, 0, suitable4VideoEncoderBuff.buff.length, nowTimeMs * 1000, 0);
-            } else {
-                LogTools.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
+            synchronized (syncDstVideoEncoder) {
+                if(dstVideoEncoder!=null && isEncoderStarted ) {
+                    int eibIndex = dstVideoEncoder.dequeueInputBuffer(-1);
+                    if (eibIndex >= 0) {
+                        ByteBuffer dstVideoEncoderIBuffer = dstVideoEncoder.getInputBuffers()[eibIndex];
+                        dstVideoEncoderIBuffer.position(0);
+                        dstVideoEncoderIBuffer.put(suitable4VideoEncoderBuff.buff, 0, suitable4VideoEncoderBuff.buff.length);
+                        dstVideoEncoder.queueInputBuffer(eibIndex, 0, suitable4VideoEncoderBuff.buff.length, nowTimeMs * 1000, 0);
+                    } else {
+                        LogTools.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
+                    }
+                }
             }
 
             LogTools.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));

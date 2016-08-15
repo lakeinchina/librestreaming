@@ -268,9 +268,9 @@ public class RESHardVideoCore implements RESVideoCore {
                                 break;
                             }
                         }
-//                        if (frameNum >= 1) {
-//                            break;
-//                        }
+                        if (frameNum >= 1) {
+                            break;
+                        }
                     }
                     drawFrame();
                     drawFrameRateMeter.count();

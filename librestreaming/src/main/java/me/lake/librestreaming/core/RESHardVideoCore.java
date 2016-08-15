@@ -16,6 +16,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
@@ -49,8 +50,6 @@ public class RESHardVideoCore implements RESVideoCore {
     private final Object syncPreview = new Object();
     private HandlerThread videoGLHandlerThread;
     private VideoGLHandler videoGLHander;
-    //sender
-    private VideoSenderThread videoSenderThread;
 
     final private Object syncResScreenShotListener = new Object();
     private RESScreenShotListener resScreenShotListener;
@@ -98,8 +97,10 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public void updatePreview(int visualWidth, int visualHeight) {
-        synchronized (syncPreview) {
-            videoGLHander.updatePreview(visualWidth, visualHeight);
+        synchronized (syncOp) {
+            synchronized (syncPreview) {
+                videoGLHander.updatePreview(visualWidth, visualHeight);
+            }
         }
     }
 
@@ -112,19 +113,9 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
-        try {
-            if (dstVideoEncoder == null) {
-                dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
-            }
-            dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_START_STREAMING, dstVideoEncoder.createInputSurface()));
-            dstVideoEncoder.start();
-        } catch (Exception e) {
-            LogTools.trace("RESHardVideoCore,startStreaming()failed", e);
-            return false;
+        synchronized (syncOp) {
+            videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_START_STREAMING, flvDataCollecter));
         }
-        videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, flvDataCollecter);
-        videoSenderThread.start();
         return true;
     }
 
@@ -139,18 +130,9 @@ public class RESHardVideoCore implements RESVideoCore {
 
     @Override
     public boolean stopStreaming() {
-        videoGLHander.sendEmptyMessage(VideoGLHandler.WHAT_STOP_STREAMING);
-        videoSenderThread.quit();
-        try {
-            videoSenderThread.join();
-        } catch (InterruptedException e) {
-            LogTools.trace("RESHardVideoCore,stopStreaming()failed", e);
-            return false;
+        synchronized (syncOp) {
+            videoGLHander.sendEmptyMessage(VideoGLHandler.WHAT_STOP_STREAMING);
         }
-        videoSenderThread = null;
-        dstVideoEncoder.stop();
-        dstVideoEncoder.release();
-        dstVideoEncoder = null;
         return true;
     }
 
@@ -244,6 +226,8 @@ public class RESHardVideoCore implements RESVideoCore {
         private BaseHardVideoFilter innerVideoFilter = null;
         private RESFrameRateMeter drawFrameRateMeter;
         private int directionFlag;
+        //sender
+        private VideoSenderThread videoSenderThread;
 
         public VideoGLHandler(Looper looper) {
             super(looper);
@@ -300,11 +284,32 @@ public class RESHardVideoCore implements RESVideoCore {
                 }
                 break;
                 case WHAT_START_STREAMING: {
-                    initMediaCodecGL((Surface) msg.obj);
+                    if (dstVideoEncoder == null) {
+                        try {
+                            dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+                        } catch (IOException e) {
+                            LogTools.trace(e);
+                        }
+                    }
+                    dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                    initMediaCodecGL(dstVideoEncoder.createInputSurface());
+                    dstVideoEncoder.start();
+                    videoSenderThread = new VideoSenderThread("VideoSenderThread", dstVideoEncoder, (RESFlvDataCollecter) msg.obj);
+                    videoSenderThread.start();
                 }
                 break;
                 case WHAT_STOP_STREAMING: {
+                    videoSenderThread.quit();
+                    try {
+                        videoSenderThread.join();
+                    } catch (InterruptedException e) {
+                        LogTools.trace("RESHardVideoCore,stopStreaming()failed", e);
+                    }
+                    videoSenderThread = null;
                     uninitMediaCodecGL();
+                    dstVideoEncoder.stop();
+                    dstVideoEncoder.release();
+                    dstVideoEncoder = null;
                 }
                 break;
                 default:
@@ -380,6 +385,9 @@ public class RESHardVideoCore implements RESVideoCore {
             } else {
                 drawOriginFrameBuffer();
             }
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffer);
+            checkScreenShot();
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
 
         private void drawMediaCodec() {
@@ -393,7 +401,6 @@ public class RESHardVideoCore implements RESVideoCore {
                         shapeVerticesBuffer, mediaCodecTextureVerticesBuffer);
                 doGLDraw();
                 GLES20.glFinish();
-                checkScreenShot();
                 GLHelper.disableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc);
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
                 GLES20.glUseProgram(0);
@@ -415,6 +422,7 @@ public class RESHardVideoCore implements RESVideoCore {
                         shapeVerticesBuffer, screenTextureVerticesBuffer);
                 GLES20.glViewport(0, 0, screenSize.getWidth(), screenSize.getHeight());
                 doGLDraw();
+                GLES20.glFinish();
                 GLHelper.disableVertex(screenGLWapper.drawPostionLoc, screenGLWapper.drawTextureCoordLoc);
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
                 GLES20.glUseProgram(0);

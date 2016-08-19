@@ -99,10 +99,10 @@ public class RESHardVideoCore implements RESVideoCore {
                     visualWidth, visualHeight, surfaceTexture));
             synchronized (syncIsLooping) {
                 if (!isPreviewing && !isStreaming) {
-                    isPreviewing = true;
                     videoGLHander.removeMessages(VideoGLHandler.WHAT_DRAW);
                     videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(VideoGLHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
                 }
+                isPreviewing = true;
             }
         }
     }
@@ -132,10 +132,10 @@ public class RESHardVideoCore implements RESVideoCore {
             videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_START_STREAMING, flvDataCollecter));
             synchronized (syncIsLooping) {
                 if (!isPreviewing && !isStreaming) {
-                    isStreaming = true;
                     videoGLHander.removeMessages(VideoGLHandler.WHAT_DRAW);
                     videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(VideoGLHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
                 }
+                isStreaming = true;
             }
         }
         return true;

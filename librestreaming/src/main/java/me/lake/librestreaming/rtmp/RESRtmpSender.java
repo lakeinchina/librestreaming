@@ -5,8 +5,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 
-import java.util.Objects;
-
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.RESByteSpeedometer;
 import me.lake.librestreaming.core.RESFrameRateMeter;

@@ -52,6 +52,11 @@ public class RESVideoClient {
             Camera.Parameters parameters = camera.getParameters();
             CameraHelper.selectCameraPreviewWH(parameters, resCoreParameters, resConfig.getTargetVideoSize());
             CameraHelper.selectCameraFpsRange(parameters, resCoreParameters);
+            if (resConfig.getVideoFPS() > resCoreParameters.previewMaxFps/1000) {
+                resCoreParameters.videoFPS = resCoreParameters.previewMaxFps/1000;
+            } else {
+                resCoreParameters.videoFPS = resConfig.getVideoFPS();
+            }
             resoveResolution(resCoreParameters, resConfig);
             if (!CameraHelper.selectCameraColorFormat(parameters, resCoreParameters)) {
                 LogTools.e("CameraHelper.selectCameraColorFormat,Failed");

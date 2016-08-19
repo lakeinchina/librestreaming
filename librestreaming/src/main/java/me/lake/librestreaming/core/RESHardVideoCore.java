@@ -13,7 +13,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
+import android.os.SystemClock;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -53,6 +53,10 @@ public class RESHardVideoCore implements RESVideoCore {
 
     final private Object syncResScreenShotListener = new Object();
     private RESScreenShotListener resScreenShotListener;
+    private final Object syncIsLooping = new Object();
+    private boolean isPreviewing = false;
+    private boolean isStreaming = false;
+    private int loopingInterval;
 
     public RESHardVideoCore(RESCoreParameters parameters) {
         resCoreParameters = parameters;
@@ -71,8 +75,9 @@ public class RESHardVideoCore implements RESVideoCore {
             resCoreParameters.renderingMode = resConfig.getRenderingMode();
             resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
             resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-            resCoreParameters.mediacodecAVCFrameRate = 30;
             resCoreParameters.mediacodecAVCIFrameInterval = 5;
+            resCoreParameters.mediacodecAVCFrameRate = resCoreParameters.videoFPS;
+            loopingInterval = 1000 / resCoreParameters.videoFPS;
             dstVideoFormat = new MediaFormat();
             dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
             if (dstVideoEncoder == null) {
@@ -92,6 +97,13 @@ public class RESHardVideoCore implements RESVideoCore {
         synchronized (syncOp) {
             videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_START_PREVIEW,
                     visualWidth, visualHeight, surfaceTexture));
+            synchronized (syncIsLooping) {
+                if (!isPreviewing && !isStreaming) {
+                    isPreviewing = true;
+                    videoGLHander.removeMessages(VideoGLHandler.WHAT_DRAW);
+                    videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(VideoGLHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
+                }
+            }
         }
     }
 
@@ -108,6 +120,9 @@ public class RESHardVideoCore implements RESVideoCore {
     public void stopPreview() {
         synchronized (syncOp) {
             videoGLHander.sendEmptyMessage(VideoGLHandler.WHAT_STOP_PREVIEW);
+            synchronized (syncIsLooping) {
+                isPreviewing = false;
+            }
         }
     }
 
@@ -115,6 +130,13 @@ public class RESHardVideoCore implements RESVideoCore {
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
         synchronized (syncOp) {
             videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_START_STREAMING, flvDataCollecter));
+            synchronized (syncIsLooping) {
+                if (!isPreviewing && !isStreaming) {
+                    isStreaming = true;
+                    videoGLHander.removeMessages(VideoGLHandler.WHAT_DRAW);
+                    videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(VideoGLHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
+                }
+            }
         }
         return true;
     }
@@ -132,6 +154,9 @@ public class RESHardVideoCore implements RESVideoCore {
     public boolean stopStreaming() {
         synchronized (syncOp) {
             videoGLHander.sendEmptyMessage(VideoGLHandler.WHAT_STOP_STREAMING);
+            synchronized (syncIsLooping) {
+                isStreaming = false;
+            }
         }
         return true;
     }
@@ -192,6 +217,7 @@ public class RESHardVideoCore implements RESVideoCore {
         static final int WHAT_INIT = 0x001;
         static final int WHAT_UNINIT = 0x002;
         static final int WHAT_FRAME = 0x003;
+        static final int WHAT_DRAW = 0x004;
         static final int WHAT_START_PREVIEW = 0x010;
         static final int WHAT_STOP_PREVIEW = 0x020;
         static final int WHAT_START_STREAMING = 0x100;
@@ -256,7 +282,29 @@ public class RESHardVideoCore implements RESVideoCore {
                             break;
                         }
                     }
-                    drawFrame();
+                    drawSample2DFrameBuffer();
+                }
+                break;
+                case WHAT_DRAW: {
+                    long time = (Long) msg.obj;
+                    long interval = time + loopingInterval - SystemClock.uptimeMillis();
+                    synchronized (syncIsLooping) {
+                        if (isPreviewing || isStreaming) {
+                            if (interval > 0) {
+                                videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(
+                                                VideoGLHandler.WHAT_DRAW,
+                                                SystemClock.uptimeMillis() + interval),
+                                        interval);
+                            } else {
+                                videoGLHander.sendMessage(videoGLHander.obtainMessage(
+                                        VideoGLHandler.WHAT_DRAW,
+                                        SystemClock.uptimeMillis() + loopingInterval));
+                            }
+                        }
+                    }
+                    drawFrameBuffer();
+                    drawMediaCodec(time * 1000000);
+                    drawScreen();
                     drawFrameRateMeter.count();
                 }
                 break;
@@ -316,12 +364,6 @@ public class RESHardVideoCore implements RESVideoCore {
             }
         }
 
-        public void drawFrame() {
-            drawSample2DFrameBuffer();
-            drawFrameBuffer();
-            drawMediaCodec();
-            drawScreen();
-        }
 
         private void drawSample2DFrameBuffer() {
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, sample2DFrameBuffer);
@@ -362,6 +404,7 @@ public class RESHardVideoCore implements RESVideoCore {
         }
 
         private void drawFrameBuffer() {
+            GLHelper.makeCurrent(offScreenGLWapper);
             boolean isFilterLocked = lockVideoFilter();
             if (isFilterLocked) {
                 if (videoFilter != innerVideoFilter) {
@@ -390,7 +433,7 @@ public class RESHardVideoCore implements RESVideoCore {
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         }
 
-        private void drawMediaCodec() {
+        private void drawMediaCodec(long currTime) {
             if (mediaCodecGLWapper != null) {
                 GLHelper.makeCurrent(mediaCodecGLWapper);
                 GLES20.glUseProgram(mediaCodecGLWapper.drawProgram);
@@ -404,7 +447,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 GLHelper.disableVertex(mediaCodecGLWapper.drawPostionLoc, mediaCodecGLWapper.drawTextureCoordLoc);
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
                 GLES20.glUseProgram(0);
-                EGLExt.eglPresentationTimeANDROID(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface, cameraTexture.getTimestamp());
+                EGLExt.eglPresentationTimeANDROID(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface, currTime);
                 if (!EGL14.eglSwapBuffers(mediaCodecGLWapper.eglDisplay, mediaCodecGLWapper.eglSurface)) {
                     throw new RuntimeException("eglSwapBuffers,failed!");
                 }

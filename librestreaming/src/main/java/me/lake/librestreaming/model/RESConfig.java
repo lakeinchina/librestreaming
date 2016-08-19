@@ -35,6 +35,7 @@ public class RESConfig {
     private int defaultCamera;
     private int frontCameraDirectionMode;
     private int backCameraDirectionMode;
+    private int videoFPS;
     private boolean printDetailMsg;
 
     private RESConfig() {
@@ -45,6 +46,7 @@ public class RESConfig {
         res.setFilterMode(FilterMode.SOFT);
         res.setRenderingMode(RenderingMode.NativeWindow);
         res.setTargetVideoSize(new Size(1280, 720));
+        res.setVideoFPS(15);
         res.setVideoBufferQueueNum(5);
         res.setBitRate(2000000);
         res.setPrintDetailMsg(false);
@@ -126,6 +128,14 @@ public class RESConfig {
      */
     public void setBitRate(int bitRate) {
         this.bitRate = bitRate;
+    }
+
+    public int getVideoFPS() {
+        return videoFPS;
+    }
+
+    public void setVideoFPS(int videoFPS) {
+        this.videoFPS = videoFPS;
     }
 
     public int getVideoBufferQueueNum() {

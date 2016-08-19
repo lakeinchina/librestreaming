@@ -83,6 +83,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         resConfig.setFilterMode(filtermode);
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1024);
+        resConfig.setVideoFPS(20);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         int frontDirection, backDirection;

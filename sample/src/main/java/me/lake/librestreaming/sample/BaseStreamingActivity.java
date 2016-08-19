@@ -52,7 +52,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected Handler mainHander;
     protected Button btn_toggle;
     protected boolean started;
-    protected String rtmpaddr = "rtmp://10.57.9.35/live/livestream";
+    protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
 
     @Override
@@ -184,7 +184,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             mainHander.removeCallbacksAndMessages(null);
         }
         if (started) {
-            resClient.stop();
+            resClient.stopStreaming();
         }
         if (resClient != null) {
             resClient.destroy();
@@ -207,8 +207,8 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public void onWriteError(int error) {
         if (error == 100) {
-            resClient.stop();
-            resClient.start();
+            resClient.stopStreaming();
+            resClient.startStreaming();
         }
         /**
          * failed to write data,maybe restart.
@@ -228,7 +228,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         if (resClient != null) {
-            resClient.createPreview(surface, width, height);
+            resClient.startPreview(surface, width, height);
         }
     }
 
@@ -242,9 +242,9 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         if (resClient != null) {
-            resClient.destroyPreview();
+            resClient.stopPreview();
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -258,10 +258,10 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
             case R.id.btn_toggle:
                 if (!started) {
                     btn_toggle.setText("stop");
-                    resClient.start();
+                    resClient.startStreaming();
                 } else {
                     btn_toggle.setText("start");
-                    resClient.stop();
+                    resClient.stopStreaming();
                 }
                 started = !started;
                 break;

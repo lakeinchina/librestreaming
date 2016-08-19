@@ -9,6 +9,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -178,7 +179,7 @@ public class RESSoftAudioCore {
             }
             sequenceNum++;
             int targetIndex = msg.arg1;
-            long nowTimeMs = SystemClock.elapsedRealtime();
+            long nowTimeMs = SystemClock.uptimeMillis();
             System.arraycopy(orignAudioBuffs[targetIndex].buff, 0,
                     orignAudioBuff.buff, 0, orignAudioBuff.buff.length);
             orignAudioBuffs[targetIndex].isReadyToFill = true;

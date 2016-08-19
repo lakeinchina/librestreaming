@@ -76,26 +76,26 @@ public class RESClient {
 
 
     /**
-     * start to stream
+     * start streaming
      */
-    public void start() {
+    public void startStreaming() {
         synchronized (SyncOp) {
+            videoClient.startStreaming(dataCollecter);
             rtmpSender.start(coreParameters.rtmpAddr);
-            videoClient.start(dataCollecter);
             audioClient.start(dataCollecter);
-            LogTools.d("RESClient,start()");
+            LogTools.d("RESClient,startStreaming()");
         }
     }
 
     /**
-     * stop to stream
+     * stop streaming
      */
-    public void stop() {
+    public void stopStreaming() {
         synchronized (SyncOp) {
-            videoClient.stop();
+            videoClient.stopStreaming();
             audioClient.stop();
             rtmpSender.stop();
-            LogTools.d("RESClient,stop()");
+            LogTools.d("RESClient,stopStreaming()");
         }
     }
 
@@ -119,9 +119,9 @@ public class RESClient {
      *
      * @param surfaceTexture to rendering preview
      */
-    public void createPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-        videoClient.createPreview(surfaceTexture, visualWidth, visualHeight);
-        LogTools.d("RESClient,createPreview()");
+    public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+        videoClient.startPreview(surfaceTexture, visualWidth, visualHeight);
+        LogTools.d("RESClient,startPreview()");
     }
 
     public void updatePreview(int visualWidth, int visualHeight) {
@@ -129,14 +129,13 @@ public class RESClient {
         LogTools.d("RESClient,updatePreview()");
     }
 
-    public void destroyPreview() {
-        videoClient.destroyPreview();
-        LogTools.d("RESClient,destroyPreview()");
+    public void stopPreview() {
+        videoClient.stopPreview();
+        LogTools.d("RESClient,stopPreview()");
     }
 
     /**
      * change camera on running.<br/>
-     * call it AFTER {@link #start()} & BEFORE {@link #stop()}
      */
     public boolean swapCamera() {
         synchronized (SyncOp) {

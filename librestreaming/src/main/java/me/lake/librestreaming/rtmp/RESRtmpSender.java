@@ -51,6 +51,12 @@ public class RESRtmpSender {
         }
     }
 
+    public float getSendBufferFreePercent() {
+        synchronized (syncOp) {
+            return workHandler == null ? 0 : workHandler.getSendBufferFreePercent();
+        }
+    }
+
     public void start(String rtmpAddr) {
         synchronized (syncOp) {
             workHandler.sendStart(rtmpAddr);
@@ -133,6 +139,13 @@ public class RESRtmpSender {
             return sendFrameRateMeter.getFps();
         }
 
+        public float getSendBufferFreePercent() {
+            synchronized (syncWriteMsgNum) {
+                float res = (float) (maxQueueLength - writeMsgNum) / (float) maxQueueLength;
+                return res <= 0 ? 0f : res;
+            }
+        }
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -199,7 +212,7 @@ public class RESRtmpSender {
                         LogTools.d("senderQueue is crowded,abandon video");
                     }
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
-                    if (res != 0) {
+                    if (res == 0) {
                         errorTime = 0;
                         if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
@@ -211,7 +224,7 @@ public class RESRtmpSender {
                         ++errorTime;
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
-                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, errorTime));
+                                CallbackDelivery.i().post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, res));
                             }
                         }
                     }
@@ -225,7 +238,7 @@ public class RESRtmpSender {
             this.removeMessages(MSG_START);
             synchronized (syncWriteMsgNum) {
                 this.removeMessages(MSG_WRITE);
-                writeMsgNum=0;
+                writeMsgNum = 0;
             }
             this.sendMessage(this.obtainMessage(MSG_START, rtmpAddr));
         }
@@ -234,7 +247,7 @@ public class RESRtmpSender {
             this.removeMessages(MSG_STOP);
             synchronized (syncWriteMsgNum) {
                 this.removeMessages(MSG_WRITE);
-                writeMsgNum=0;
+                writeMsgNum = 0;
             }
             this.sendEmptyMessage(MSG_STOP);
         }
@@ -246,12 +259,7 @@ public class RESRtmpSender {
                     this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
                     ++writeMsgNum;
                 } else {
-                    if (flvData.isKeyframe()) {
-                        this.sendMessage(this.obtainMessage(MSG_WRITE, type, 0, flvData));
-                        ++writeMsgNum;
-                    } else {
-                        LogTools.d("senderQueue is full,abandon");
-                    }
+                    LogTools.d("senderQueue is full,abandon");
                 }
             }
         }

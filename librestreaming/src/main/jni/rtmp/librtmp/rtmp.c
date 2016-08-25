@@ -1576,7 +1576,7 @@ WriteN(RTMP *r, const char *buffer, int n)
 
       if (nBytes < 0)
 	{
-	  int sockerr = GetSockError();
+      sockerr = GetSockError();
 	  RTMP_Log(RTMP_LOGERROR, "%s, RTMP send error %d (%d bytes)", __FUNCTION__,
 	      sockerr, n);
 

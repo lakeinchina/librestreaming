@@ -238,6 +238,10 @@ extern "C"
     int num;
   } RTMP_METHOD;
 
+
+//lake
+int sockerr;
+//lake
   typedef struct RTMP
   {
     int m_inChunkSize;

@@ -119,8 +119,11 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         mainHander = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                tv_speed.setText("byteSpeed=" + (resClient.getAVSpeed() / 1024) + ";drawFPS=" + resClient.getDrawFrameRate() + ";sendFPS=" + resClient.getSendFrameRate());
+                tv_speed.setText("byteSpeed=" + (resClient.getAVSpeed() / 1024) + ";drawFPS=" + resClient.getDrawFrameRate() + ";sendFPS=" + resClient.getSendFrameRate() + ";sendbufferfreepercent=" + resClient.getSendBufferFreePercent());
                 sendEmptyMessageDelayed(0, 3000);
+                if (resClient.getSendBufferFreePercent() <= 0.05) {
+                    Toast.makeText(BaseStreamingActivity.this, "sendbuffer is full,netspeed is low!", Toast.LENGTH_SHORT).show();
+                }
             }
         };
         mainHander.sendEmptyMessageDelayed(0, 3000);
@@ -197,6 +200,8 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     public void onOpenConnectionResult(int result) {
         if (result == 0) {
             Log.e(TAG, "server IP = " + resClient.getServerIpAddr());
+        }else {
+            Toast.makeText(this, "startfailed", Toast.LENGTH_SHORT).show();
         }
         /**
          * result==0 success
@@ -206,15 +211,16 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     }
 
     @Override
-    public void onWriteError(int error) {
-        if (error == 100) {
+    public void onWriteError(int errno) {
+        if (errno == 9) {
             resClient.stopStreaming();
             resClient.startStreaming();
+            Toast.makeText(this, "errno==9,restarting", Toast.LENGTH_SHORT).show();
         }
         /**
          * failed to write data,maybe restart.
          */
-        tv_rtmp.setText("writeError=" + error);
+        tv_rtmp.setText("writeError=" + errno);
     }
 
     @Override

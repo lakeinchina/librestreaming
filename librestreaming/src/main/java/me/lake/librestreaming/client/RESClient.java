@@ -207,6 +207,17 @@ public class RESClient {
     }
 
     /**
+     * get free percent of send buffer
+     * return ~0.0 if the netspeed is not enough or net is blocked.
+     * @return
+     */
+    public float getSendBufferFreePercent() {
+        synchronized (SyncOp) {
+            return rtmpSender == null ? 0 : rtmpSender.getSendBufferFreePercent();
+        }
+    }
+
+    /**
      * only for soft filter mode.<br/>
      * set videofilter.<br/>
      * can be called Repeatedly.<br/>

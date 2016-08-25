@@ -110,13 +110,13 @@
     free(packet);
     (*env)->ReleaseByteArrayElements(env, data, buffer, 0);
     if (!ret) {
-    	LOGD("end write error %d", ret);
+    	LOGD("end write error %d", sockerr);
+		return sockerr;
     }else
     {
     	LOGD("end write success");
+		return 0;
     }
-
-    return ret;
 }
 
 /*

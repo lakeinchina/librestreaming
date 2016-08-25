@@ -8,8 +8,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Hard mode filter can be implemented by rendering image texture captured from camera
 - Compatible with GPUImage,use GPUImageFilter without change one line
 - Support pixel rotation and flip
-- Support encoding paramaters like resolution(depend on device), bitrate, etc
-- H264 profile is auto-adjusted on different device
+- Support encoding paramaters like resolution, bitrate,fps etc
 - Fast front/rear camera swaping without interrupt rtmp streaming
 
 ### Soft Filter Mode
@@ -27,13 +26,14 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - BaseHardVideoFilter is more powerful and flexible and need write openGLES code by yourself. You can theoretically achieve any effects you want via BaseHardVideoFilter.
 - Adjust your filter properties between acquireHardVideoFilter and releaseHardVideoFilter, call releaseHardVideoFilter as soon as operation finished (after acquireHardVideoFilter), interval better be less than 3ms
 
-### Start/stop recording and streaming:
+### Start/stop preview and stream:
 ```java
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         ... ...
         RESConfig resConfig = RESConfig.obtain();
-        resConfig.setFilterMode(RESConfig.FilterMode.SOFT);
+        resConfig.setRtmpAddr("rtmp://***");
+        resConfig.setFilterMode(RESConfig.FilterMode.HARD);
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1024);
         resConfig.setVideoFPS(30);
@@ -41,19 +41,36 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         if (!resClient.prepare(resConfig)) {
             Log.e("Main", "prepare,failed!!");
+            finish();
         }
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        resClient.start();//start streaming & preview
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        resClient.startPreview(surface, width, height);
     }
 
     @Override
-    protected void onPause() {
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        resClient.updatePreview(width, height);
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        resClient.stopPreview();
+        return false;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onResume();
+        resClient.startStreaming();
+    }
+
+    @Override
+    protected void onStop() {
         super.onPause();
-        resClient.stop();//stop streaming & preview
+        resClient.stopStreaming();
     }
 
     @Override
@@ -65,12 +82,19 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 
 ### Set recording direction:
 ```java
-    if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
-        resConfig.setBackCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90);
-    } else {
-        resConfig.setFrontCameraDirectionMode(RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
-    }
+        int frontDirection, backDirection;
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, cameraInfo);
+        frontDirection = cameraInfo.orientation;
+        Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
+        backDirection = cameraInfo.orientation;
+        if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            resConfig.setFrontCameraDirectionMode((frontDirection == 90 ? RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_270 : RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90) | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+            resConfig.setBackCameraDirectionMode((backDirection == 90 ? RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_90 : RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_270));
+        } else {
+            resConfig.setBackCameraDirectionMode((backDirection == 90 ? RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_0 : RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_180));
+            resConfig.setFrontCameraDirectionMode((frontDirection == 90 ? RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_180 : RESConfig.DirectionMode.FLAG_DIRECTION_ROATATION_0) | RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL);
+        }
 ```
 
 ### Add filter:
@@ -99,6 +123,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - 支持gpu滤镜，并可以通过opengles绘制图像纹理来自定义滤镜。
 - gpu滤镜模式下兼容GPUImage，一行代码不用修改就可以直接使用GPUImage的滤镜。
 - 前后摄像头快速切换，不会打断推流。
+- 可以自定义帧率,最大不会超过设备支持帧率
 - 可以选择图像大小，码流比特率，具体取决于设备支持。
 
 

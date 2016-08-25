@@ -82,7 +82,7 @@ public class RESSoftVideoCore implements RESVideoCore {
         if (currentCamera != camIndex) {
             synchronized (syncOp) {
                 if (videoFilterHandler != null) {
-                    videoFilterHandler.removeCallbacksAndMessages(null);
+                    videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_INCOMING_BUFF);
                 }
                 if (orignVideoBuffs != null) {
                     for (RESVideoBuff buff : orignVideoBuffs) {

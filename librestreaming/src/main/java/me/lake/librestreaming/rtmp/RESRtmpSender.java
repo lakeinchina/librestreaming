@@ -208,8 +208,9 @@ public class RESRtmpSender {
                         break;
                     }
                     RESFlvData flvData = (RESFlvData) msg.obj;
-                    if (writeMsgNum >= (maxQueueLength * 2 / 3) && flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
+                    if (writeMsgNum >= (maxQueueLength * 2 / 3) && flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO && !flvData.isKeyframe()) {
                         LogTools.d("senderQueue is crowded,abandon video");
+                        break;
                     }
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res == 0) {

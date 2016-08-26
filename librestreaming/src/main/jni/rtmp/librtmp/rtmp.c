@@ -404,6 +404,9 @@ RTMP_UpdateBufferMS(RTMP *r)
 static const char DEFAULT_FLASH_VER[] = DEF_VERSTR;
 const AVal RTMP_DefaultFlashVer =
   { (char *)DEFAULT_FLASH_VER, sizeof(DEFAULT_FLASH_VER) - 1 };
+#define LIBRES_FLASH_VER "librestreaming/0.3.1"
+const AVal RTMP_LibResFlashVer =
+        { (char *)LIBRES_FLASH_VER, sizeof(LIBRES_FLASH_VER) - 1 };
 
 static void
 SocksSetup(RTMP *r, AVal *sockshost)
@@ -770,6 +773,7 @@ int RTMP_SetupURL(RTMP *r, char *url)
     return ret;
   r->Link.port = port;
   r->Link.playpath = r->Link.playpath0;
+  r->Link.flashVer = RTMP_LibResFlashVer;
 
   while (ptr) {
     *ptr++ = '\0';

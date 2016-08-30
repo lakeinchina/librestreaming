@@ -39,7 +39,7 @@ public class SeaScapeFilter extends BaseHardVideoFilter {
             "const int NUM_STEPS = 8;\n" +
             "const float PI\t \t= 3.1415;\n" +
             "const float EPSILON\t= 1e-3;\n" +
-            "float EPSILON_NRM\t= 0.1 / iResolution.x;\n" +
+            "float EPSILON_NRM;\n" +
             "\n" +
             "// sea\n" +
             "const int ITER_GEOMETRY = 3;\n" +
@@ -50,7 +50,7 @@ public class SeaScapeFilter extends BaseHardVideoFilter {
             "const float SEA_FREQ = 0.16;\n" +
             "const vec3 SEA_BASE = vec3(0.1,0.19,0.22);\n" +
             "const vec3 SEA_WATER_COLOR = vec3(0.8,0.9,0.6);\n" +
-            "float SEA_TIME = iGlobalTime * SEA_SPEED;\n" +
+            "float SEA_TIME;\n" +
             "mat2 octave_m = mat2(1.6,1.2,-1.2,1.6);\n" +
             "\n" +
             "// math\n" +

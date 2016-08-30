@@ -375,7 +375,7 @@ public class RESSoftVideoCore implements RESVideoCore {
                         }
                     }
                     sequenceNum++;
-                    long nowTimeMs = SystemClock.elapsedRealtime();
+                    long nowTimeMs = SystemClock.uptimeMillis();
                     boolean isFilterLocked = lockVideoFilter();
                     if (isFilterLocked) {
                         boolean modified;

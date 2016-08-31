@@ -255,6 +255,8 @@ public class RESHardVideoCore implements RESVideoCore {
         //sender
         private VideoSenderThread videoSenderThread;
 
+        boolean hasNewFrame =false;
+
         public VideoGLHandler(Looper looper) {
             super(looper);
             screenGLWapper = null;
@@ -272,14 +274,14 @@ public class RESHardVideoCore implements RESVideoCore {
                     synchronized (syncFrameNum) {
                         synchronized (syncCameraTex) {
                             if (cameraTexture != null) {
-                                cameraTexture.updateTexImage();
-                                --frameNum;
+                                while (frameNum!=0) {
+                                    cameraTexture.updateTexImage();
+                                    --frameNum;
+                                    hasNewFrame =true;
+                                }
                             } else {
                                 break;
                             }
-                        }
-                        if (frameNum >= 1) {
-                            break;
                         }
                     }
                     drawSample2DFrameBuffer();
@@ -302,10 +304,13 @@ public class RESHardVideoCore implements RESVideoCore {
                             }
                         }
                     }
-                    drawFrameBuffer();
-                    drawMediaCodec(time * 1000000);
-                    drawScreen();
-                    drawFrameRateMeter.count();
+                    if(hasNewFrame) {
+                        drawFrameBuffer();
+                        drawMediaCodec(time * 1000000);
+                        drawScreen();
+                        drawFrameRateMeter.count();
+                        hasNewFrame =false;
+                    }
                 }
                 break;
                 case WHAT_INIT: {
@@ -668,7 +673,8 @@ public class RESHardVideoCore implements RESVideoCore {
         public void addFrameNum() {
             synchronized (syncFrameNum) {
                 ++frameNum;
-                this.sendEmptyMessage(VideoGLHandler.WHAT_FRAME);
+                this.removeMessages(WHAT_FRAME);
+                this.sendMessageAtFrontOfQueue(this.obtainMessage(VideoGLHandler.WHAT_FRAME));
             }
         }
 

@@ -1,7 +1,9 @@
 package me.lake.librestreaming.client;
 
 
+import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
+import android.os.Build;
 
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
@@ -339,6 +341,16 @@ public class RESClient {
 
     public void takeScreenShot(RESScreenShotListener listener) {
         videoClient.takeScreenShot(listener);
+    }
+
+    /**
+     * Change video bitrate on the fly<br/>
+     * call between {@link #startStreaming()} & {@link #stopStreaming()}
+     * @param bitrate target bitrate
+     */
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    public void reSetVideoBitrate(int bitrate) {
+        videoClient.reSetVideoBitrate(bitrate);
     }
 
     public String getVertion() {

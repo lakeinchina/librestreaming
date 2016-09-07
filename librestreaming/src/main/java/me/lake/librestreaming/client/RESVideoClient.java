@@ -273,11 +273,21 @@ public class RESVideoClient {
     }
 
     public boolean setZoomByPercent(float targetPercent) {
-        targetPercent = Math.min(Math.max(0f, targetPercent), 1f);
-        Camera.Parameters p = camera.getParameters();
-        p.setZoom((int) (p.getMaxZoom() * targetPercent));
-        camera.setParameters(p);
-        return true;
+        synchronized (syncOp) {
+            targetPercent = Math.min(Math.max(0f, targetPercent), 1f);
+            Camera.Parameters p = camera.getParameters();
+            p.setZoom((int) (p.getMaxZoom() * targetPercent));
+            camera.setParameters(p);
+            return true;
+        }
+    }
+
+    public void reSetVideoBitrate(int bitrate) {
+        synchronized (syncOp) {
+            if(videoCore!=null) {
+                videoCore.reSetVideoBitrate(bitrate);
+            }
+        }
     }
 
     public BaseSoftVideoFilter acquireSoftVideoFilter() {

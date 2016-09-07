@@ -27,6 +27,8 @@ public interface RESVideoCore {
 
     boolean destroy();
 
+    void reSetVideoBitrate(int bitrate);
+
     void setCurrentCamera(int cameraIndex);
 
     void takeScreenShot(RESScreenShotListener listener);

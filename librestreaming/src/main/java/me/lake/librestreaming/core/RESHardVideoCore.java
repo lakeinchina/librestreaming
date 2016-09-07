@@ -1,5 +1,6 @@
 package me.lake.librestreaming.core;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -9,6 +10,8 @@ import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -176,10 +179,22 @@ public class RESHardVideoCore implements RESVideoCore {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
+    public void reSetVideoBitrate(int bitrate) {
+        synchronized (syncOp) {
+            if (videoGLHander != null) {
+                videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_RESET_BITRATE, bitrate, 0));
+            }
+        }
+    }
+
     @Override
     public void setCurrentCamera(int cameraIndex) {
-        if (videoGLHander != null) {
-            videoGLHander.updateCameraIndex(cameraIndex);
+        synchronized (syncOp) {
+            if (videoGLHander != null) {
+                videoGLHander.updateCameraIndex(cameraIndex);
+            }
         }
     }
 
@@ -222,6 +237,7 @@ public class RESHardVideoCore implements RESVideoCore {
         static final int WHAT_STOP_PREVIEW = 0x020;
         static final int WHAT_START_STREAMING = 0x100;
         static final int WHAT_STOP_STREAMING = 0x200;
+        static final int WHAT_RESET_BITRATE = 0x300;
         private Size screenSize;
         //=========================
         public static final int FILTER_LOCK_TOLERATION = 3;//3ms
@@ -255,7 +271,7 @@ public class RESHardVideoCore implements RESVideoCore {
         //sender
         private VideoSenderThread videoSenderThread;
 
-        boolean hasNewFrame =false;
+        boolean hasNewFrame = false;
 
         public VideoGLHandler(Looper looper) {
             super(looper);
@@ -274,10 +290,10 @@ public class RESHardVideoCore implements RESVideoCore {
                     synchronized (syncFrameNum) {
                         synchronized (syncCameraTex) {
                             if (cameraTexture != null) {
-                                while (frameNum!=0) {
+                                while (frameNum != 0) {
                                     cameraTexture.updateTexImage();
                                     --frameNum;
-                                    hasNewFrame =true;
+                                    hasNewFrame = true;
                                 }
                             } else {
                                 break;
@@ -304,12 +320,12 @@ public class RESHardVideoCore implements RESVideoCore {
                             }
                         }
                     }
-                    if(hasNewFrame) {
+                    if (hasNewFrame) {
                         drawFrameBuffer();
                         drawMediaCodec(time * 1000000);
                         drawScreen();
                         drawFrameRateMeter.count();
-                        hasNewFrame =false;
+                        hasNewFrame = false;
                     }
                 }
                 break;
@@ -363,6 +379,14 @@ public class RESHardVideoCore implements RESVideoCore {
                     dstVideoEncoder.stop();
                     dstVideoEncoder.release();
                     dstVideoEncoder = null;
+                }
+                break;
+                case WHAT_RESET_BITRATE: {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && mediaCodecGLWapper != null) {
+                        Bundle bitrateBundle = new Bundle();
+                        bitrateBundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, msg.arg1);
+                        dstVideoEncoder.setParameters(bitrateBundle);
+                    }
                 }
                 break;
                 default:

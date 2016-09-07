@@ -6,6 +6,8 @@ import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -210,6 +212,15 @@ public class RESSoftVideoCore implements RESVideoCore {
     }
 
     @Override
+    public void reSetVideoBitrate(int bitrate) {
+        synchronized (syncOp) {
+            if (videoFilterHandler != null) {
+                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_RESET_BITRATE, bitrate, 0));
+            }
+        }
+    }
+
+    @Override
     public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
         synchronized (syncPreview) {
             if (previewRender != null) {
@@ -330,6 +341,7 @@ public class RESSoftVideoCore implements RESVideoCore {
         public static final int FILTER_LOCK_TOLERATION = 3;//3ms
         public static final int WHAT_INCOMING_BUFF = 1;
         public static final int WHAT_DRAW = 2;
+        public static final int WHAT_RESET_BITRATE = 3;
         private int sequenceNum;
         private RESFrameRateMeter drawFrameRateMeter;
 
@@ -426,6 +438,13 @@ public class RESSoftVideoCore implements RESVideoCore {
                     }
 
                     LogTools.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));
+                }
+                case WHAT_RESET_BITRATE: {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && dstVideoEncoder != null) {
+                        Bundle bitrateBundle = new Bundle();
+                        bitrateBundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, msg.arg1);
+                        dstVideoEncoder.setParameters(bitrateBundle);
+                    }
                 }
                 break;
             }

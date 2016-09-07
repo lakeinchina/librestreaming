@@ -439,6 +439,7 @@ public class RESSoftVideoCore implements RESVideoCore {
 
                     LogTools.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));
                 }
+                break;
                 case WHAT_RESET_BITRATE: {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && dstVideoEncoder != null) {
                         Bundle bitrateBundle = new Bundle();

@@ -185,7 +185,16 @@ public class RESHardVideoCore implements RESVideoCore {
         synchronized (syncOp) {
             if (videoGLHander != null) {
                 videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_RESET_BITRATE, bitrate, 0));
+                resCoreParameters.mediacdoecAVCBitRate = bitrate;
+                dstVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, resCoreParameters.mediacdoecAVCBitRate);
             }
+        }
+    }
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
+    public int getVideoBitrate() {
+        synchronized (syncOp) {
+            return resCoreParameters.mediacdoecAVCBitRate;
         }
     }
 

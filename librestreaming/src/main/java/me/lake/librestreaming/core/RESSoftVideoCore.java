@@ -1,5 +1,6 @@
 package me.lake.librestreaming.core;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -211,12 +212,22 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public void reSetVideoBitrate(int bitrate) {
         synchronized (syncOp) {
             if (videoFilterHandler != null) {
                 videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_RESET_BITRATE, bitrate, 0));
+                resCoreParameters.mediacdoecAVCBitRate = bitrate;
+                dstVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, resCoreParameters.mediacdoecAVCBitRate);
             }
+        }
+    }
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
+    public int getVideoBitrate() {
+        synchronized (syncOp) {
+            return resCoreParameters.mediacdoecAVCBitRate;
         }
     }
 

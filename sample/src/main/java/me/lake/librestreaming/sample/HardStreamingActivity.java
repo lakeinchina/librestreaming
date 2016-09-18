@@ -24,25 +24,22 @@ import jp.co.cyberagent.android.gpuimage.GPUImageCGAColorspaceFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageColorInvertFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageCrosshatchFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageFilter;
-import jp.co.cyberagent.android.gpuimage.GPUImageGammaFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageGrayscaleFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImagePixelationFilter;
-import jp.co.cyberagent.android.gpuimage.GPUImageSketchFilter;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.hardvideofilter.HardVideoGroupFilter;
 import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.sample.hardfilter.ColorMixHardFilter;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
+import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.IconHardFilter;
 import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
-import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
 import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.extra.GPUImageCompatibleFilter;
-import me.lake.librestreaming.tools.GLESTools;
 
 /**
  * Created by lake on 16-5-31.
@@ -131,22 +128,6 @@ public class HardStreamingActivity extends BaseStreamingActivity {
                     }
                 }
                 resClient.releaseHardVideoFilter();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        sb_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                resClient.setZoomByPercent(progress / 100.0f);
             }
 
             @Override

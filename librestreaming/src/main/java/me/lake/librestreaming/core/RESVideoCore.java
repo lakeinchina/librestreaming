@@ -29,6 +29,8 @@ public interface RESVideoCore {
 
     void reSetVideoBitrate(int bitrate);
 
+    int getVideoBitrate();
+
     void setCurrentCamera(int cameraIndex);
 
     void takeScreenShot(RESScreenShotListener listener);

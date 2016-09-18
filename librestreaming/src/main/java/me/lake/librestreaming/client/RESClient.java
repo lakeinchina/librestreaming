@@ -346,11 +346,19 @@ public class RESClient {
     /**
      * Change video bitrate on the fly<br/>
      * call between {@link #startStreaming()} & {@link #stopStreaming()}
-     * @param bitrate target bitrate
+     * @param bitrate target bitrate bits/sec
      */
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public void reSetVideoBitrate(int bitrate) {
         videoClient.reSetVideoBitrate(bitrate);
+    }
+
+    /**
+     * get current bitrate
+     * @return current bitrate bits/sec
+     */
+    public int getVideoBitrate() {
+        return videoClient.getVideoBitrate();
     }
 
     public String getVertion() {

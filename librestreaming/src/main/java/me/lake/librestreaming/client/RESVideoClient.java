@@ -290,6 +290,16 @@ public class RESVideoClient {
         }
     }
 
+    public int getVideoBitrate() {
+        synchronized (syncOp) {
+            if (videoCore != null) {
+                return videoCore.getVideoBitrate();
+            } else {
+                return 0;
+            }
+        }
+    }
+
     public BaseSoftVideoFilter acquireSoftVideoFilter() {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             return ((RESSoftVideoCore) videoCore).acquireVideoFilter();

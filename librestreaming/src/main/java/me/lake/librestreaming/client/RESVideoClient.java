@@ -300,6 +300,20 @@ public class RESVideoClient {
         }
     }
 
+    public void reSetVideoFPS(int fps) {
+        synchronized (syncOp) {
+            int targetFps;
+            if (fps > resCoreParameters.previewMaxFps / 1000) {
+                targetFps = resCoreParameters.previewMaxFps / 1000;
+            } else {
+                targetFps = fps;
+            }
+            if (videoCore != null) {
+                videoCore.reSetVideoFPS(targetFps);
+            }
+        }
+    }
+
     public BaseSoftVideoFilter acquireSoftVideoFilter() {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             return ((RESSoftVideoCore) videoCore).acquireVideoFilter();

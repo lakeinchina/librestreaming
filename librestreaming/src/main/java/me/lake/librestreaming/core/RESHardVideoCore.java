@@ -199,6 +199,14 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     @Override
+    public void reSetVideoFPS(int fps) {
+        synchronized (syncOp) {
+            resCoreParameters.videoFPS = fps;
+            loopingInterval = 1000 / resCoreParameters.videoFPS;
+        }
+    }
+
+    @Override
     public void setCurrentCamera(int cameraIndex) {
         synchronized (syncOp) {
             if (videoGLHander != null) {

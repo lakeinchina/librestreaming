@@ -361,6 +361,14 @@ public class RESClient {
         return videoClient.getVideoBitrate();
     }
 
+    /**
+     * update fps on the fly.
+     * @param fps
+     */
+    public void reSetVideoFPS(int fps) {
+        videoClient.reSetVideoFPS(fps);
+    }
+
     public String getVertion() {
         return Constants.VERSION;
     }

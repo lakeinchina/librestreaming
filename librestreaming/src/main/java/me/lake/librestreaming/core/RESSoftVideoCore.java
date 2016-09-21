@@ -223,11 +223,20 @@ public class RESSoftVideoCore implements RESVideoCore {
             }
         }
     }
+
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public int getVideoBitrate() {
         synchronized (syncOp) {
             return resCoreParameters.mediacdoecAVCBitRate;
+        }
+    }
+
+    @Override
+    public void reSetVideoFPS(int fps) {
+        synchronized (syncOp) {
+            resCoreParameters.videoFPS = fps;
+            loopingInterval = 1000 / resCoreParameters.videoFPS;
         }
     }
 

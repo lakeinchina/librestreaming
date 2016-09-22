@@ -26,6 +26,7 @@ import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.RESVideoBuff;
+import me.lake.librestreaming.model.Size;
 import me.lake.librestreaming.render.GLESRender;
 import me.lake.librestreaming.render.IRender;
 import me.lake.librestreaming.render.NativeRender;
@@ -116,20 +117,17 @@ public class RESSoftVideoCore implements RESVideoCore {
                     return false;
                 }
             }
+            resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth,
+                    resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
             //video
             int videoWidth = resCoreParameters.videoWidth;
             int videoHeight = resCoreParameters.videoHeight;
             int videoQueueNum = resCoreParameters.videoBufferQueueNum;
-            int orignVideoBuffSize = BuffSizeCalculator.calculator(videoWidth, videoHeight, resCoreParameters.previewColorFormat);
             orignVideoBuffs = new RESVideoBuff[videoQueueNum];
             for (int i = 0; i < videoQueueNum; i++) {
-                orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, orignVideoBuffSize);
-            }
-            for (RESVideoBuff buff : orignVideoBuffs) {
-                buff.isReadyToFill = true;
+                orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, resCoreParameters.previewBufferSize);
             }
             lastVideoQueueBuffIndex = 0;
-            resCoreParameters.previewBufferSize = orignVideoBuffSize;
             orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
                     BuffSizeCalculator.calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
             filteredNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
@@ -238,6 +236,11 @@ public class RESSoftVideoCore implements RESVideoCore {
             resCoreParameters.videoFPS = fps;
             loopingInterval = 1000 / resCoreParameters.videoFPS;
         }
+    }
+
+    @Override
+    public void reSetVideoSize(RESCoreParameters newParameters) {
+
     }
 
     @Override

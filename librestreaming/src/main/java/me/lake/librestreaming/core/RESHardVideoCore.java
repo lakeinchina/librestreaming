@@ -19,7 +19,6 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.view.Surface;
 
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
@@ -82,11 +81,6 @@ public class RESHardVideoCore implements RESVideoCore {
             resCoreParameters.mediacodecAVCFrameRate = resCoreParameters.videoFPS;
             loopingInterval = 1000 / resCoreParameters.videoFPS;
             dstVideoFormat = new MediaFormat();
-            dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
-            if (dstVideoEncoder == null) {
-                LogTools.e("create Video MediaCodec failed");
-                return false;
-            }
             videoGLHandlerThread = new HandlerThread("GLThread");
             videoGLHandlerThread.start();
             videoGLHander = new VideoGLHandler(videoGLHandlerThread.getLooper());
@@ -190,6 +184,7 @@ public class RESHardVideoCore implements RESVideoCore {
             }
         }
     }
+
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public int getVideoBitrate() {
@@ -203,6 +198,17 @@ public class RESHardVideoCore implements RESVideoCore {
         synchronized (syncOp) {
             resCoreParameters.videoFPS = fps;
             loopingInterval = 1000 / resCoreParameters.videoFPS;
+        }
+    }
+
+    @Override
+    public void reSetVideoSize(RESCoreParameters newParameters) {
+        synchronized (syncOp) {
+            synchronized (syncIsLooping) {
+                if (isPreviewing || isStreaming) {
+                    videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_RESET_VIDEO, newParameters));
+                }
+            }
         }
     }
 
@@ -250,6 +256,7 @@ public class RESHardVideoCore implements RESVideoCore {
         static final int WHAT_UNINIT = 0x002;
         static final int WHAT_FRAME = 0x003;
         static final int WHAT_DRAW = 0x004;
+        static final int WHAT_RESET_VIDEO = 0x005;
         static final int WHAT_START_PREVIEW = 0x010;
         static final int WHAT_STOP_PREVIEW = 0x020;
         static final int WHAT_START_STREAMING = 0x100;
@@ -371,10 +378,9 @@ public class RESHardVideoCore implements RESVideoCore {
                 break;
                 case WHAT_START_STREAMING: {
                     if (dstVideoEncoder == null) {
-                        try {
-                            dstVideoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
-                        } catch (IOException e) {
-                            LogTools.trace(e);
+                        dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
+                        if (dstVideoEncoder == null) {
+                            throw new RuntimeException("create Video MediaCodec failed");
                         }
                     }
                     dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -403,6 +409,28 @@ public class RESHardVideoCore implements RESVideoCore {
                         Bundle bitrateBundle = new Bundle();
                         bitrateBundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, msg.arg1);
                         dstVideoEncoder.setParameters(bitrateBundle);
+                    }
+                }
+                break;
+                case WHAT_RESET_VIDEO: {
+                    RESCoreParameters newParameters = (RESCoreParameters) msg.obj;
+                    resCoreParameters.videoWidth = newParameters.videoWidth;
+                    resCoreParameters.videoHeight = newParameters.videoHeight;
+                    resCoreParameters.cropRatio = newParameters.cropRatio;
+                    updateCameraIndex(currCamera);
+                    resetFrameBuff();
+                    if (mediaCodecGLWapper != null) {
+                        uninitMediaCodecGL();
+                        dstVideoEncoder.stop();
+                        dstVideoEncoder.release();
+                        dstVideoEncoder = MediaCodecHelper.createHardVideoMediaCodec(resCoreParameters, dstVideoFormat);
+                        if (dstVideoEncoder == null) {
+                            throw new RuntimeException("create Video MediaCodec failed");
+                        }
+                        dstVideoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                        initMediaCodecGL(dstVideoEncoder.createInputSurface());
+                        dstVideoEncoder.start();
+                        videoSenderThread.updateMediaCodec(dstVideoEncoder);
                     }
                 }
                 break;
@@ -647,11 +675,11 @@ public class RESHardVideoCore implements RESVideoCore {
         }
 
         private void initMediaCodecGL(Surface mediacodecSurface) {
-            GLES20.glEnable(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
             if (mediaCodecGLWapper == null) {
                 mediaCodecGLWapper = new MediaCodecGLWapper();
                 GLHelper.initMediaCodecGL(mediaCodecGLWapper, offScreenGLWapper.eglContext, mediacodecSurface);
                 GLHelper.makeCurrent(mediaCodecGLWapper);
+                GLES20.glEnable(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
                 mediaCodecGLWapper.drawProgram = GLHelper.createMediaCodecProgram();
                 GLES20.glUseProgram(mediaCodecGLWapper.drawProgram);
                 mediaCodecGLWapper.drawTextureLoc = GLES20.glGetUniformLocation(mediaCodecGLWapper.drawProgram, "uTexture");
@@ -674,6 +702,21 @@ public class RESHardVideoCore implements RESVideoCore {
             } else {
                 throw new IllegalStateException("uninitMediaCodecGL without initMediaCodecGL");
             }
+        }
+
+        private void resetFrameBuff() {
+            GLHelper.makeCurrent(offScreenGLWapper);
+            GLES20.glDeleteFramebuffers(1, new int[]{frameBuffer}, 0);
+            GLES20.glDeleteTextures(1, new int[]{frameBufferTexture}, 0);
+            GLES20.glDeleteFramebuffers(1, new int[]{sample2DFrameBuffer}, 0);
+            GLES20.glDeleteTextures(1, new int[]{sample2DFrameBufferTexture}, 0);
+            int[] fb = new int[1], fbt = new int[1];
+            GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            sample2DFrameBuffer = fb[0];
+            sample2DFrameBufferTexture = fbt[0];
+            GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            frameBuffer = fb[0];
+            frameBufferTexture = fbt[0];
         }
 
         private void initBuffer() {

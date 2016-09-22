@@ -369,6 +369,21 @@ public class RESClient {
         videoClient.reSetVideoFPS(fps);
     }
 
+    /**
+     * only work with hard mode.
+     * reset video size on the fly.
+     * may restart camera.
+     * will restart mediacodec.
+     * will not interrupt streaming
+     * @param targetVideoSize
+     */
+    public void reSetVideoSize(Size targetVideoSize) {
+        if (targetVideoSize == null) {
+            return;
+        }
+        videoClient.reSetVideoSize(targetVideoSize);
+    }
+
     public String getVertion() {
         return Constants.VERSION;
     }

@@ -15,7 +15,9 @@ import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
+import me.lake.librestreaming.model.Size;
 import me.lake.librestreaming.rtmp.RESFlvDataCollecter;
+import me.lake.librestreaming.tools.BuffSizeCalculator;
 import me.lake.librestreaming.tools.LogTools;
 
 /**
@@ -52,12 +54,12 @@ public class RESVideoClient {
             Camera.Parameters parameters = camera.getParameters();
             CameraHelper.selectCameraPreviewWH(parameters, resCoreParameters, resConfig.getTargetVideoSize());
             CameraHelper.selectCameraFpsRange(parameters, resCoreParameters);
-            if (resConfig.getVideoFPS() > resCoreParameters.previewMaxFps/1000) {
-                resCoreParameters.videoFPS = resCoreParameters.previewMaxFps/1000;
+            if (resConfig.getVideoFPS() > resCoreParameters.previewMaxFps / 1000) {
+                resCoreParameters.videoFPS = resCoreParameters.previewMaxFps / 1000;
             } else {
                 resCoreParameters.videoFPS = resConfig.getVideoFPS();
             }
-            resoveResolution(resCoreParameters, resConfig);
+            resoveResolution(resCoreParameters, resConfig.getTargetVideoSize());
             if (!CameraHelper.selectCameraColorFormat(parameters, resCoreParameters)) {
                 LogTools.e("CameraHelper.selectCameraColorFormat,Failed");
                 resCoreParameters.dump();
@@ -284,7 +286,7 @@ public class RESVideoClient {
 
     public void reSetVideoBitrate(int bitrate) {
         synchronized (syncOp) {
-            if(videoCore!=null) {
+            if (videoCore != null) {
                 videoCore.reSetVideoBitrate(bitrate);
             }
         }
@@ -311,6 +313,47 @@ public class RESVideoClient {
             if (videoCore != null) {
                 videoCore.reSetVideoFPS(targetFps);
             }
+        }
+    }
+
+    public boolean reSetVideoSize(Size targetVideoSize) {
+        synchronized (syncOp) {
+            RESCoreParameters newParameters = new RESCoreParameters();
+            newParameters.isPortrait = resCoreParameters.isPortrait;
+            newParameters.filterMode = resCoreParameters.filterMode;
+            Camera.Parameters parameters = camera.getParameters();
+            CameraHelper.selectCameraPreviewWH(parameters, newParameters, targetVideoSize);
+            resoveResolution(newParameters, targetVideoSize);
+            boolean needRestartCamera = (newParameters.previewVideoHeight != resCoreParameters.previewVideoHeight
+                    || newParameters.previewVideoWidth != resCoreParameters.previewVideoWidth);
+            if (needRestartCamera) {
+                newParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.previewVideoWidth,
+                        resCoreParameters.previewVideoHeight, resCoreParameters.previewColorFormat);
+                resCoreParameters.previewVideoWidth = newParameters.previewVideoWidth;
+                resCoreParameters.previewVideoHeight = newParameters.previewVideoHeight;
+                resCoreParameters.previewBufferSize  = newParameters.previewBufferSize;
+                if ((isPreviewing || isStreaming)) {
+                    LogTools.d("RESClient,reSetVideoSize.restartCamera");
+                    camera.stopPreview();
+                    camera.release();
+                    camera = null;
+                    if (null == (camera = createCamera(currentCameraIndex))) {
+                        LogTools.e("can not createCamera camera");
+                        return false;
+                    }
+                    if (!CameraHelper.configCamera(camera, resCoreParameters)) {
+                        camera.release();
+                        return false;
+                    }
+                    prepareVideo();
+                    videoCore.updateCamTexture(null);
+                    camTexture.release();
+                    startVideo();
+                    videoCore.updateCamTexture(camTexture);
+                }
+            }
+            videoCore.reSetVideoSize(newParameters);
+            return true;
         }
     }
 
@@ -366,7 +409,7 @@ public class RESVideoClient {
         }
     }
 
-    private void resoveResolution(RESCoreParameters resCoreParameters, RESConfig resConfig) {
+    private void resoveResolution(RESCoreParameters resCoreParameters, Size targetVideoSize) {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             if (resCoreParameters.isPortrait) {
                 resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
@@ -378,13 +421,13 @@ public class RESVideoClient {
         } else {
             float pw, ph, vw, vh;
             if (resCoreParameters.isPortrait) {
-                resCoreParameters.videoHeight = resConfig.getTargetVideoSize().getWidth();
-                resCoreParameters.videoWidth = resConfig.getTargetVideoSize().getHeight();
+                resCoreParameters.videoHeight = targetVideoSize.getWidth();
+                resCoreParameters.videoWidth = targetVideoSize.getHeight();
                 pw = resCoreParameters.previewVideoHeight;
                 ph = resCoreParameters.previewVideoWidth;
             } else {
-                resCoreParameters.videoWidth = resConfig.getTargetVideoSize().getWidth();
-                resCoreParameters.videoHeight = resConfig.getTargetVideoSize().getHeight();
+                resCoreParameters.videoWidth = targetVideoSize.getWidth();
+                resCoreParameters.videoHeight = targetVideoSize.getHeight();
                 pw = resCoreParameters.previewVideoWidth;
                 ph = resCoreParameters.previewVideoHeight;
             }
@@ -400,4 +443,5 @@ public class RESVideoClient {
             }
         }
     }
+
 }

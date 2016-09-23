@@ -125,9 +125,6 @@ public class RESSoftVideoCore implements RESVideoCore {
             for (int i = 0; i < videoQueueNum; i++) {
                 orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, orignVideoBuffSize);
             }
-            for (RESVideoBuff buff : orignVideoBuffs) {
-                buff.isReadyToFill = true;
-            }
             lastVideoQueueBuffIndex = 0;
             resCoreParameters.previewBufferSize = orignVideoBuffSize;
             orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,

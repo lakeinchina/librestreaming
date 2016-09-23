@@ -1,5 +1,7 @@
 package me.lake.librestreaming.model;
 
+import java.util.Arrays;
+
 /**
  * Created by lake on 16-3-18.
  */
@@ -13,5 +15,6 @@ public class RESVideoBuff {
         isReadyToFill = true;
         this.colorFormat = colorFormat;
         buff = new byte[size];
+        Arrays.fill(buff, size/2, size, (byte) 127);
     }
 }

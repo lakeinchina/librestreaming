@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.model.MediaCodecGLWapper;
 import me.lake.librestreaming.model.OffScreenGLWapper;
@@ -55,6 +56,8 @@ public class RESHardVideoCore implements RESVideoCore {
 
     final private Object syncResScreenShotListener = new Object();
     private RESScreenShotListener resScreenShotListener;
+    final private Object syncResVideoChangeListener = new Object();
+    private RESVideoChangeListener resVideoChangeListener;
     private final Object syncIsLooping = new Object();
     private boolean isPreviewing = false;
     private boolean isStreaming = false;
@@ -245,6 +248,13 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     @Override
+    public void setVideoChangeListener(RESVideoChangeListener listener) {
+        synchronized (syncResVideoChangeListener) {
+            resVideoChangeListener = listener;
+        }
+    }
+
+    @Override
     public float getDrawFrameRate() {
         synchronized (syncOp) {
             return videoGLHander == null ? 0 : videoGLHander.getDrawFrameRate();
@@ -431,6 +441,11 @@ public class RESHardVideoCore implements RESVideoCore {
                         initMediaCodecGL(dstVideoEncoder.createInputSurface());
                         dstVideoEncoder.start();
                         videoSenderThread.updateMediaCodec(dstVideoEncoder);
+                    }
+                    synchronized (syncResVideoChangeListener) {
+                        CallbackDelivery.i().post(new RESVideoChangeListener.RESVideoChangeRunable(resVideoChangeListener,
+                                resCoreParameters.videoWidth,
+                                resCoreParameters.videoHeight));
                     }
                 }
                 break;

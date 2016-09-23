@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import me.lake.librestreaming.client.RESClient;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.Size;
@@ -37,7 +38,7 @@ import me.lake.librestreaming.sample.ui.AspectTextureView;
 /**
  * Created by lake on 16-5-31.
  */
-public class BaseStreamingActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener {
+public class BaseStreamingActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener, RESVideoChangeListener {
     private static final String TAG = "RES";
     public static final String DIRECTION = "direction";
     public static final String RTMPADDR = "rtmpaddr";
@@ -111,6 +112,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) s.getWidth()) / s.getHeight());
         Log.d(TAG, "version=" + resClient.getVertion());
         resClient.setConnectionListener(this);
+        resClient.setVideoChangeListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);
         btn_toggle.setOnClickListener(this);
         findViewById(R.id.btn_swap).setOnClickListener(this);
@@ -233,6 +235,11 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     }
 
     @Override
+    public void onVideoSizeChanged(int width, int height) {
+        txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) width) / height);
+    }
+
+    @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         if (resClient != null) {
             resClient.startPreview(surface, width, height);
@@ -301,4 +308,5 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
                 break;
         }
     }
+
 }

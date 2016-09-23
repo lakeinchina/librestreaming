@@ -3,6 +3,7 @@ package me.lake.librestreaming.core;
 import android.graphics.SurfaceTexture;
 
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
 import me.lake.librestreaming.model.Size;
@@ -40,6 +41,8 @@ public interface RESVideoCore {
     void setCurrentCamera(int cameraIndex);
 
     void takeScreenShot(RESScreenShotListener listener);
+
+    void setVideoChangeListener(RESVideoChangeListener listener);
 
     float getDrawFrameRate();
 }

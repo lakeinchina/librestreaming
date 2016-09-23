@@ -11,6 +11,7 @@ import me.lake.librestreaming.core.RESHardVideoCore;
 import me.lake.librestreaming.core.RESSoftVideoCore;
 import me.lake.librestreaming.core.RESVideoCore;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
@@ -399,6 +400,14 @@ public class RESVideoClient {
         synchronized (syncOp) {
             if (videoCore != null) {
                 videoCore.takeScreenShot(listener);
+            }
+        }
+    }
+
+    public void setVideoChangeListener(RESVideoChangeListener listener) {
+        synchronized (syncOp) {
+            if (videoCore != null) {
+                videoCore.setVideoChangeListener(listener);
             }
         }
     }

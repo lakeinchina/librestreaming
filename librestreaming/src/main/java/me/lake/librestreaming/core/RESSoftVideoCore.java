@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import me.lake.librestreaming.client.CallbackDelivery;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.RESCoreParameters;
@@ -350,6 +351,10 @@ public class RESSoftVideoCore implements RESVideoCore {
         synchronized (syncResScreenShotListener) {
             resScreenShotListener = listener;
         }
+    }
+
+    @Override
+    public void setVideoChangeListener(RESVideoChangeListener listener) {
     }
 
     @Override

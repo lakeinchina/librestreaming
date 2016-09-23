@@ -131,8 +131,12 @@ public class RESClient {
         LogTools.d("RESClient,updatePreview()");
     }
 
-    public void stopPreview() {
-        videoClient.stopPreview();
+    /**
+     *
+     * @param releaseTexture true if you won`t reuse this surfaceTexture later
+     */
+    public void stopPreview(boolean releaseTexture) {
+        videoClient.stopPreview(releaseTexture);
         LogTools.d("RESClient,stopPreview()");
     }
 

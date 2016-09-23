@@ -283,12 +283,12 @@ public class RESSoftVideoCore implements RESVideoCore {
     }
 
     @Override
-    public void stopPreview() {
+    public void stopPreview(boolean releaseTexture) {
         synchronized (syncPreview) {
             if (previewRender == null) {
                 throw new RuntimeException("stopPreview without startPreview");
             }
-            previewRender.destroy();
+            previewRender.destroy(releaseTexture);
             previewRender = null;
             synchronized (syncIsLooping) {
                 isPreviewing = false;

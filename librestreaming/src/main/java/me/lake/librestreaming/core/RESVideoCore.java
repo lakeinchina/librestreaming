@@ -19,7 +19,7 @@ public interface RESVideoCore {
 
     void updatePreview(int visualWidth, int visualHeight);
 
-    void stopPreview();
+    void stopPreview(boolean releaseTexture);
 
     boolean startStreaming(RESFlvDataCollecter flvDataCollecter);
 

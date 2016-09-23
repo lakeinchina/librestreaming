@@ -163,10 +163,10 @@ public class RESVideoClient {
         videoCore.updatePreview(visualWidth, visualHeight);
     }
 
-    public boolean stopPreview() {
+    public boolean stopPreview(boolean releaseTexture) {
         synchronized (syncOp) {
             if (isPreviewing) {
-                videoCore.stopPreview();
+                videoCore.stopPreview(releaseTexture);
                 if (!isStreaming) {
                     camera.stopPreview();
                     videoCore.updateCamTexture(null);

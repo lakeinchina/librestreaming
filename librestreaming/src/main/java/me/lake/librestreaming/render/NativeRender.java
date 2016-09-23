@@ -41,8 +41,10 @@ public class NativeRender implements IRender {
     }
 
     @Override
-    public void destroy() {
-        mVisualSurface.release();
+    public void destroy(boolean releaseTexture) {
+        if(releaseTexture) {
+            mVisualSurface.release();
+        }
     }
 
     @SuppressWarnings("all")

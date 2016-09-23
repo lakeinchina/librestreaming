@@ -12,5 +12,5 @@ public interface IRender {
 
     void rendering(byte[] pixel);
 
-    void destroy();
+    void destroy(boolean releaseTexture);
 }

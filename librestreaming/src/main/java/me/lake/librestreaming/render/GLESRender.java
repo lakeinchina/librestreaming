@@ -58,9 +58,9 @@ public class GLESRender implements IRender {
     }
 
     @Override
-    public void destroy() {
+    public void destroy(boolean releaseTexture) {
         synchronized (syncRenderThread) {
-            glesRenderThread.quit();
+            glesRenderThread.quit(releaseTexture);
             try {
                 glesRenderThread.join();
             } catch (InterruptedException ignored) {
@@ -78,6 +78,7 @@ public class GLESRender implements IRender {
         SurfaceTexture mVisualSurfaceTexture;
         private final Object syncThread = new Object();
         boolean quit = false;
+        boolean releaseTexture=true;
 
         EGL10 mEgl;
         EGLDisplay mEglDisplay;
@@ -108,8 +109,9 @@ public class GLESRender implements IRender {
             vBuf.put(vTemp).position(0);
         }
 
-        public void quit() {
+        public void quit(boolean releaseTexture) {
             synchronized (syncThread) {
+                this.releaseTexture = releaseTexture;
                 quit = true;
                 syncThread.notify();
             }
@@ -156,6 +158,9 @@ public class GLESRender implements IRender {
                 }
             }
             releaseGLES();
+            if (releaseTexture) {
+                mVisualSurfaceTexture.release();
+            }
         }
 
         private void drawFrame() {

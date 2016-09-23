@@ -54,6 +54,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     protected boolean started;
     protected String rtmpaddr = "rtmp://10.57.9.88/live/livestream";
     protected int filtermode = RESConfig.FilterMode.SOFT;
+    RESConfig resConfig;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +80,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         txv_preview.setKeepScreenOn(true);
         txv_preview.setSurfaceTextureListener(this);
         resClient = new RESClient();
-        final RESConfig resConfig = RESConfig.obtain();
+         resConfig = RESConfig.obtain();
         resConfig.setFilterMode(filtermode);
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(1000 * 1024);
@@ -196,6 +197,22 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         super.onDestroy();
     }
 
+    protected void reStartWithResolution(int w, int h) {
+        if (started) {
+            resClient.stopStreaming();
+        }
+        resClient.stopPreview(false);
+        resClient.destroy();
+        resConfig.setTargetVideoSize(new Size(w, h));
+        resClient.prepare(resConfig);
+        resClient.startPreview(texture, sw, sh);
+        Size s = resClient.getVideoSize();
+        txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) s.getWidth()) / s.getHeight());
+        if (started) {
+            resClient.startStreaming();
+        }
+    }
+
     @Override
     public void onOpenConnectionResult(int result) {
         if (result == 0) {
@@ -232,11 +249,17 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         tv_rtmp.setText("close=" + result);
     }
 
+    protected SurfaceTexture texture;
+    protected int sw,sh;
+
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         if (resClient != null) {
             resClient.startPreview(surface, width, height);
         }
+        texture = surface;
+        sw = width;
+        sh = height;
     }
 
     @Override
@@ -249,7 +272,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         if (resClient != null) {
-            resClient.stopPreview();
+            resClient.stopPreview(true);
         }
         return false;
     }

@@ -120,9 +120,9 @@ public class RESHardVideoCore implements RESVideoCore {
     }
 
     @Override
-    public void stopPreview() {
+    public void stopPreview(boolean releaseTexture) {
         synchronized (syncOp) {
-            videoGLHander.sendEmptyMessage(VideoGLHandler.WHAT_STOP_PREVIEW);
+            videoGLHander.sendMessage(videoGLHander.obtainMessage(VideoGLHandler.WHAT_STOP_PREVIEW, releaseTexture));
             synchronized (syncIsLooping) {
                 isPreviewing = false;
             }
@@ -367,6 +367,11 @@ public class RESHardVideoCore implements RESVideoCore {
                 break;
                 case WHAT_STOP_PREVIEW: {
                     uninitScreenGL();
+                    boolean releaseTexture = (boolean) msg.obj;
+                    if (releaseTexture) {
+                        screenTexture.release();
+                        screenTexture = null;
+                    }
                 }
                 break;
                 case WHAT_START_STREAMING: {
@@ -638,8 +643,6 @@ public class RESHardVideoCore implements RESVideoCore {
                 EGL14.eglDestroyContext(screenGLWapper.eglDisplay, screenGLWapper.eglContext);
                 EGL14.eglTerminate(screenGLWapper.eglDisplay);
                 EGL14.eglMakeCurrent(screenGLWapper.eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-                screenTexture.release();
-                screenTexture = null;
                 screenGLWapper = null;
             } else {
                 throw new IllegalStateException("unInitScreenGL without initScreenGL");

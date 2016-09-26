@@ -23,29 +23,33 @@ import me.lake.librestreaming.tools.GLESTools;
  */
 public class TextHardFilter extends BaseHardVideoFilter {
     private CharSequence text;
-    private int textColor;
-    private int textSize;
+    private int textColor=Color.WHITE;
+    private int textSize=30;
     private boolean textNeedUpdate;
     private boolean postionNeedUpdate;
 
     protected int imageTexture = GLESTools.NO_TEXTURE;
     protected Bitmap textBitmap;
 
-    private Rect iconRect;
+    private Rect textRect =new Rect(0, 0, 0, 0);
     private int gravity;
     private int verticalMargin;
     private int horizontalMargin;
 
     public TextHardFilter(CharSequence text, int textColor, int textSize) {
-        iconRect = new Rect(0, 0, 0, 0);
         setText(text, textColor, textSize);
     }
 
     public TextHardFilter(@Nullable CharSequence text) {
-        iconRect = new Rect(0, 0, 0, 0);
         setText(text);
     }
 
+    /**
+     *  update text.
+     * @param charSequence html,spannablestring supported.
+     * @param textColor if (textColor == Color.TRANSPARENT), The text color will become inverted.
+     * @param textSize text size in pixel
+     */
     public void setText(CharSequence charSequence, @ColorInt int textColor, int textSize) {
         this.text = charSequence;
         this.textColor = textColor;
@@ -55,7 +59,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
     }
 
     public void setText(CharSequence charSequence) {
-        setText(charSequence, Color.WHITE, 30);
+        setText(charSequence, textColor, textSize);
     }
 
     public void setPostion(int gravity, int verticalMargin, int horizontalMargin) {
@@ -72,7 +76,11 @@ public class TextHardFilter extends BaseHardVideoFilter {
         if (textNeedUpdate) {
             int w = 0, h = 0;
             TextPaint textPaint = new TextPaint();
-            textPaint.setColor(textColor);
+            if (textColor == Color.TRANSPARENT) {
+                textPaint.setColor(Color.BLACK);
+            } else {
+                textPaint.setColor(textColor);
+            }
             textPaint.setTextSize(textSize);
             textPaint.setAntiAlias(true);
             StaticLayout innerStaticLayout = new StaticLayout(text,
@@ -117,6 +125,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
     protected int glCamTextureCoordLoc;
     protected int glImageTextureLoc;
     protected int glImageRectLoc;
+    protected int glInverseColorLoc;
     protected String vertexShader_filter = "" +
             "attribute vec4 aCamPosition;\n" +
             "attribute vec2 aCamTextureCoord;\n" +
@@ -131,20 +140,30 @@ public class TextHardFilter extends BaseHardVideoFilter {
             "uniform sampler2D uCamTexture;\n" +
             "uniform sampler2D uImageTexture;\n" +
             "uniform vec4 imageRect;\n" +
+            "uniform int inverseColor;\n" +
             "void main(){\n" +
-            "   lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +
-            "   lowp vec2 vCamTextureCoord2 = vec2(vCamTextureCoord.x,1.0-vCamTextureCoord.y);\n" +
-            "   if(vCamTextureCoord2.x>imageRect.r && vCamTextureCoord2.x<imageRect.b && vCamTextureCoord2.y>imageRect.g && vCamTextureCoord2.y<imageRect.a)\n" +
-            "   {\n" +
+            "    lowp vec4 c1 = texture2D(uCamTexture, vCamTextureCoord);\n" +
+            "    lowp vec2 vCamTextureCoord2 = vec2(vCamTextureCoord.x,1.0-vCamTextureCoord.y);\n" +
+            "    if(vCamTextureCoord2.x>imageRect.r && vCamTextureCoord2.x<imageRect.b && vCamTextureCoord2.y>imageRect.g && vCamTextureCoord2.y<imageRect.a)\n" +
+            "    {\n" +
             "        vec2 imagexy = vec2((vCamTextureCoord2.x-imageRect.r)/(imageRect.b-imageRect.r),(vCamTextureCoord2.y-imageRect.g)/(imageRect.a-imageRect.g));\n" +
             "        lowp vec4 c2 = texture2D(uImageTexture, imagexy);\n" +
-            "        lowp vec4 outputColor = c2+c1*c1.a*(1.0-c2.a);\n" +
-            "        outputColor.a = 1.0;\n" +
-            "        gl_FragColor = outputColor;\n" +
-            "   }else\n" +
-            "   {\n" +
-            "       gl_FragColor = c1;\n" +
-            "   }\n" +
+            "        if(inverseColor==1){\n" +
+            "            if(c2.a==0.0){\n" +
+            "                gl_FragColor = c1;\n" +
+            "            }else{\n" +
+            "                gl_FragColor = vec4(c1.r-c2.a*2.0*(c1.r-0.5),\n" +
+            "                    c1.g-c2.a*2.0*(c1.g-0.5),\n" +
+            "                    c1.b-c2.a*2.0*(c1.b-0.5),1.0);\n" +
+            "            }\n" +
+            "        }else{\n" +
+            "            lowp vec4 outputColor = c2+c1*c1.a*(1.0-c2.a);\n" +
+            "            outputColor.a = 1.0;\n" +
+            "            gl_FragColor = outputColor;\n" +
+            "        }\n" +
+            "    }else{\n" +
+            "        gl_FragColor = c1;\n" +
+            "    }\n" +
             "}";
 
     @Override
@@ -157,6 +176,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
         glCamPostionLoc = GLES20.glGetAttribLocation(glProgram, "aCamPosition");
         glCamTextureCoordLoc = GLES20.glGetAttribLocation(glProgram, "aCamTextureCoord");
         glImageRectLoc = GLES20.glGetUniformLocation(glProgram, "imageRect");
+        glInverseColorLoc = GLES20.glGetUniformLocation(glProgram, "inverseColor");
         textNeedUpdate = true;
         postionNeedUpdate = true;
     }
@@ -166,10 +186,11 @@ public class TextHardFilter extends BaseHardVideoFilter {
         updateText();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, targetFrameBuffer);
         GLES20.glUseProgram(glProgram);
-        GLES20.glUniform4f(glImageRectLoc, iconRect.left / (float) SIZE_WIDTH,
-                iconRect.top / (float) SIZE_HEIGHT,
-                iconRect.right / (float) SIZE_WIDTH,
-                iconRect.bottom / (float) SIZE_HEIGHT);
+        GLES20.glUniform1i(glInverseColorLoc, textColor == Color.TRANSPARENT ? 1 : 0);
+        GLES20.glUniform4f(glImageRectLoc, textRect.left / (float) SIZE_WIDTH,
+                textRect.top / (float) SIZE_HEIGHT,
+                textRect.right / (float) SIZE_WIDTH,
+                textRect.bottom / (float) SIZE_HEIGHT);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, cameraTexture);
         GLES20.glUniform1i(glCamTextureLoc, 0);
@@ -203,7 +224,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
         super.onDestroy();
         GLES20.glDeleteProgram(glProgram);
         GLES20.glDeleteTextures(1, new int[]{imageTexture}, 0);
-        imageTexture=GLESTools.NO_TEXTURE;
+        imageTexture = GLESTools.NO_TEXTURE;
     }
 
     private void updatePostion() {
@@ -241,7 +262,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
                 right = horizontalMargin + textBitmap.getWidth();
                 break;
         }
-        iconRect.set(left, top, right, bottom);
+        textRect.set(left, top, right, bottom);
     }
 
     public class Gravity {

@@ -98,6 +98,9 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         TimeStampHardFilter timeStampHardFilter = new TimeStampHardFilter(null,Color.RED,30);
         timeStampHardFilter.setPostion(TextHardFilter.Gravity.BOTTOM|TextHardFilter.Gravity.RIGHT,30,30);
         filterItems.add(new FilterItem("TimeStamp",timeStampHardFilter));
+        TimeStampHardFilter timeStampHardFilter2 = new TimeStampHardFilter(null,Color.TRANSPARENT,30);
+        timeStampHardFilter2.setPostion(TextHardFilter.Gravity.BOTTOM|TextHardFilter.Gravity.RIGHT,30,30);
+        filterItems.add(new FilterItem("invertText",timeStampHardFilter2));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();

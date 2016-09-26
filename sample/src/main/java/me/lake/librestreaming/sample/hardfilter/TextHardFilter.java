@@ -3,6 +3,7 @@ package me.lake.librestreaming.sample.hardfilter;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.opengl.GLES20;
 import android.support.annotation.ColorInt;
@@ -98,6 +99,7 @@ public class TextHardFilter extends BaseHardVideoFilter {
                 imageTexture = GLESTools.NO_TEXTURE;
             }
             innerCanvas = new Canvas(textBitmap);
+            innerCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             innerStaticLayout.draw(innerCanvas);
             imageTexture = GLESTools.loadTexture(textBitmap, imageTexture);
             textNeedUpdate = false;

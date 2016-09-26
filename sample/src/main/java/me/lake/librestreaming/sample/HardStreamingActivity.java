@@ -40,6 +40,7 @@ import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.TextHardFilter;
+import me.lake.librestreaming.sample.hardfilter.TimeStampHardFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
 import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.extra.GPUImageCompatibleFilter;
@@ -79,12 +80,12 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("SobelEdgeDetection", new SobelEdgeDetectionHardVideoFilter()));
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("Icon",new IconHardFilter(bitmap,new Rect(100,100,200,200))));
-        filterItems.add(new FilterItem("SeaScape",new SeaScapeFilter()));
-        filterItems.add(new FilterItem("SimpleText",new TextHardFilter("タイムマシン", Color.argb(127,255,0,0),35)));
+        filterItems.add(new FilterItem("SeaScape", new SeaScapeFilter()));
+        filterItems.add(new FilterItem("SimpleText", new TextHardFilter("タイムマシン", Color.argb(127, 255, 0, 0), 35)));
         CharSequence htmlText = Html.fromHtml("<font color=\"#7FFF0000\">红色字体红色</font><br/><b>字体加粗</b><br/><s>删除字体</s><i>斜体字体</i>");
         TextHardFilter htmlTextHardFilter = new TextHardFilter(htmlText);
-        htmlTextHardFilter.setPostion(TextHardFilter.Gravity.RIGHT|TextHardFilter.Gravity.TOP,50,50);
-        filterItems.add(new FilterItem("HtmlText",htmlTextHardFilter));
+        htmlTextHardFilter.setPostion(TextHardFilter.Gravity.RIGHT | TextHardFilter.Gravity.TOP, 50, 50);
+        filterItems.add(new FilterItem("HtmlText", htmlTextHardFilter));
         TextHardFilter moreText = new TextHardFilter("Fou ki ra hyear presia reen\n" +
                 "Was zweie ra na stel yorra zuieg manaf\n" +
                 "Ma zweie ra irs manaf chyet oz omnis\n" +
@@ -93,7 +94,10 @@ public class HardStreamingActivity extends BaseStreamingActivity {
                 "Nn num gagis knawa na lequera walasye\n" +
                 "Was quel gagis presia accrroad ieeya whou wearequewie fogabe",Color.RED,30);
         moreText.setPostion(TextHardFilter.Gravity.BOTTOM,50,50);
-        filterItems.add(new FilterItem("MoreText",moreText));
+        filterItems.add(new FilterItem("MoreText", moreText));
+        TimeStampHardFilter timeStampHardFilter = new TimeStampHardFilter(null,Color.RED,30);
+        timeStampHardFilter.setPostion(TextHardFilter.Gravity.BOTTOM|TextHardFilter.Gravity.RIGHT,30,30);
+        filterItems.add(new FilterItem("TimeStamp",timeStampHardFilter));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();

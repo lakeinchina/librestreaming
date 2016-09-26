@@ -2,9 +2,11 @@ package me.lake.librestreaming.sample;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +39,7 @@ import me.lake.librestreaming.sample.hardfilter.IconHardFilter;
 import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilter;
+import me.lake.librestreaming.sample.hardfilter.TextHardFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
 import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.extra.GPUImageCompatibleFilter;
@@ -77,21 +80,35 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         filterItems.add(new FilterItem("Icon",new IconHardFilter(bitmap,new Rect(100,100,200,200))));
         filterItems.add(new FilterItem("SeaScape",new SeaScapeFilter()));
-        filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<GPUImageColorInvertFilter>(new GPUImageColorInvertFilter())));
-        filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<GPUImagePixelationFilter>(new GPUImagePixelationFilter())));
+        filterItems.add(new FilterItem("SimpleText",new TextHardFilter("タイムマシン", Color.argb(127,255,0,0),35)));
+        CharSequence htmlText = Html.fromHtml("<font color=\"#7FFF0000\">红色字体红色</font><br/><b>字体加粗</b><br/><s>删除字体</s><i>斜体字体</i>");
+        TextHardFilter htmlTextHardFilter = new TextHardFilter(htmlText);
+        htmlTextHardFilter.setPostion(TextHardFilter.Gravity.RIGHT|TextHardFilter.Gravity.TOP,50,50);
+        filterItems.add(new FilterItem("HtmlText",htmlTextHardFilter));
+        TextHardFilter moreText = new TextHardFilter("Fou ki ra hyear presia reen\n" +
+                "Was zweie ra na stel yorra zuieg manaf\n" +
+                "Ma zweie ra irs manaf chyet oz omnis\n" +
+                "en na cyurio re chyet\n" +
+                "Was touwaka gaya presia accrroad ieeya\n" +
+                "Nn num gagis knawa na lequera walasye\n" +
+                "Was quel gagis presia accrroad ieeya whou wearequewie fogabe",Color.RED,30);
+        moreText.setPostion(TextHardFilter.Gravity.BOTTOM,50,50);
+        filterItems.add(new FilterItem("MoreText",moreText));
+        filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<>(new GPUImageColorInvertFilter())));
+        filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();
         tmp.setConvolutionKernel(new float[]{
                 -1.0f, 0.0f, 1.0f,
                 -2.0f, 0.0f, 2.0f,
                 -1.0f, 0.0f, 1.0f
         });
-        filterItems.add(new FilterItem("gpuimage:3x3Convolution", new GPUImageCompatibleFilter<GPUImage3x3ConvolutionFilter>(tmp)));
+        filterItems.add(new FilterItem("gpuimage:3x3Convolution", new GPUImageCompatibleFilter<>(tmp)));
         LinkedList<BaseHardVideoFilter> sketchfilters = new LinkedList<>();
-        sketchfilters.add(new GPUImageCompatibleFilter<GPUImageGrayscaleFilter>(new GPUImageGrayscaleFilter()));
-        sketchfilters.add(new GPUImageCompatibleFilter<GPUImage3x3TextureSamplingFilter>(new GPUImage3x3TextureSamplingFilter(SKETCH_FRAGMENT_SHADER)));
+        sketchfilters.add(new GPUImageCompatibleFilter<>(new GPUImageGrayscaleFilter()));
+        sketchfilters.add(new GPUImageCompatibleFilter<>(new GPUImage3x3TextureSamplingFilter(SKETCH_FRAGMENT_SHADER)));
         filterItems.add(new FilterItem("gpuimage:SketchGroup", new HardVideoGroupFilter(sketchfilters)));
-        filterItems.add(new FilterItem("gpuimage:CGAColor", new GPUImageCompatibleFilter<GPUImageCGAColorspaceFilter>(new GPUImageCGAColorspaceFilter())));
-        filterItems.add(new FilterItem("gpuimage:Crosshatch", new GPUImageCompatibleFilter<GPUImageCrosshatchFilter>(new GPUImageCrosshatchFilter())));
+        filterItems.add(new FilterItem("gpuimage:CGAColor", new GPUImageCompatibleFilter<>(new GPUImageCGAColorspaceFilter())));
+        filterItems.add(new FilterItem("gpuimage:Crosshatch", new GPUImageCompatibleFilter<>(new GPUImageCrosshatchFilter())));
         filterAdapter = new FilterAdapter();
         filterAdapter.updateFilters(filterItems);
         lv_filter.setAdapter(filterAdapter);

@@ -10,6 +10,8 @@ public class RESFlvData {
     public final static int FLV_RTMP_PACKET_TYPE_INFO = 18;
     public final static int NALU_TYPE_IDR = 5;
 
+    public boolean droppable;
+
     public int dts;//解码时间戳
 
     public byte[] byteBuffer; //数据

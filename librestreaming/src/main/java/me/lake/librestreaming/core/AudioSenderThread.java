@@ -83,6 +83,7 @@ public class AudioSenderThread extends Thread {
                 0,
                 true);
         RESFlvData resFlvData = new RESFlvData();
+        resFlvData.droppable = false;
         resFlvData.byteBuffer = finalBuff;
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;
@@ -100,6 +101,7 @@ public class AudioSenderThread extends Thread {
                 0,
                 false);
         RESFlvData resFlvData = new RESFlvData();
+        resFlvData.droppable = true;
         resFlvData.byteBuffer = finalBuff;
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;

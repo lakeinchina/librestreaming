@@ -208,7 +208,7 @@ public class RESRtmpSender {
                         break;
                     }
                     RESFlvData flvData = (RESFlvData) msg.obj;
-                    if (writeMsgNum >= (maxQueueLength * 2 / 3) && flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO && !flvData.isKeyframe()) {
+                    if (writeMsgNum >= (maxQueueLength * 2 / 3) && flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO && flvData.droppable) {
                         LogTools.d("senderQueue is crowded,abandon video");
                         break;
                     }

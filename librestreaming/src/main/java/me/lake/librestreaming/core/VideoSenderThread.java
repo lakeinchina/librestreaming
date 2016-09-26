@@ -86,6 +86,7 @@ public class VideoSenderThread extends Thread {
         System.arraycopy(AVCDecoderConfigurationRecord, 0,
                 finalBuff, Packager.FLVPackager.FLV_VIDEO_TAG_LENGTH, AVCDecoderConfigurationRecord.length);
         RESFlvData resFlvData = new RESFlvData();
+        resFlvData.droppable = false;
         resFlvData.byteBuffer = finalBuff;
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;
@@ -111,6 +112,7 @@ public class VideoSenderThread extends Thread {
                 frameType == 5,
                 realDataLength);
         RESFlvData resFlvData = new RESFlvData();
+        resFlvData.droppable = true;
         resFlvData.byteBuffer = finalBuff;
         resFlvData.size = finalBuff.length;
         resFlvData.dts = (int) tms;

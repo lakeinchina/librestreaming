@@ -390,7 +390,11 @@ public class RESClient {
         if (targetVideoSize == null) {
             return;
         }
-        videoClient.reSetVideoSize(targetVideoSize);
+        if (coreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            throw new IllegalArgumentException("soft mode doesn`t support reSetVideoSize");
+        }else {
+            videoClient.reSetVideoSize(targetVideoSize);
+        }
     }
 
     public String getVertion() {

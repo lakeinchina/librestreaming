@@ -443,9 +443,11 @@ public class RESHardVideoCore implements RESVideoCore {
                         videoSenderThread.updateMediaCodec(dstVideoEncoder);
                     }
                     synchronized (syncResVideoChangeListener) {
-                        CallbackDelivery.i().post(new RESVideoChangeListener.RESVideoChangeRunable(resVideoChangeListener,
-                                resCoreParameters.videoWidth,
-                                resCoreParameters.videoHeight));
+                        if(resVideoChangeListener!=null) {
+                            CallbackDelivery.i().post(new RESVideoChangeListener.RESVideoChangeRunable(resVideoChangeListener,
+                                    resCoreParameters.videoWidth,
+                                    resCoreParameters.videoHeight));
+                        }
                     }
                 }
                 break;

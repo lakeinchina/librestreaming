@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import me.lake.librestreaming.client.RESClient;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.model.Size;
@@ -37,7 +38,7 @@ import me.lake.librestreaming.sample.ui.AspectTextureView;
 /**
  * Created by lake on 16-5-31.
  */
-public class BaseStreamingActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener {
+public class BaseStreamingActivity extends AppCompatActivity implements RESConnectionListener, TextureView.SurfaceTextureListener, View.OnClickListener, RESVideoChangeListener {
     private static final String TAG = "RES";
     public static final String DIRECTION = "direction";
     public static final String RTMPADDR = "rtmpaddr";
@@ -83,7 +84,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
          resConfig = RESConfig.obtain();
         resConfig.setFilterMode(filtermode);
         resConfig.setTargetVideoSize(new Size(720, 480));
-        resConfig.setBitRate(1000 * 1024);
+        resConfig.setBitRate(750 * 1024);
         resConfig.setVideoFPS(20);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
@@ -112,6 +113,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) s.getWidth()) / s.getHeight());
         Log.d(TAG, "version=" + resClient.getVertion());
         resClient.setConnectionListener(this);
+        resClient.setVideoChangeListener(this);
         btn_toggle = (Button) findViewById(R.id.btn_toggle);
         btn_toggle.setOnClickListener(this);
         findViewById(R.id.btn_swap).setOnClickListener(this);
@@ -198,6 +200,11 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
     }
 
     protected void reStartWithResolution(int w, int h) {
+        /*
+        //===========don`t interrupt streaming
+        resClient.reSetVideoBitrate(1200*1024);
+        resClient.reSetVideoSize(new Size(1280,720));
+        //===or======interrupt streaming
         if (started) {
             resClient.stopStreaming();
         }
@@ -211,6 +218,8 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         if (started) {
             resClient.startStreaming();
         }
+        //===========
+        */
     }
 
     @Override
@@ -251,6 +260,11 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
 
     protected SurfaceTexture texture;
     protected int sw,sh;
+
+    @Override
+    public void onVideoSizeChanged(int width, int height) {
+        txv_preview.setAspectRatio(AspectTextureView.MODE_INSIDE, ((double) width) / height);
+    }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
@@ -324,4 +338,5 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
                 break;
         }
     }
+
 }

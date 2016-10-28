@@ -14,10 +14,11 @@ import me.lake.librestreaming.tools.LogTools;
  * Created by lakeinchina on 26/05/16.
  */
 public class VideoSenderThread extends Thread {
-    private static final long WAIT_TIME = 10000;
+    private static final long WAIT_TIME = 5000;
     private MediaCodec.BufferInfo eInfo;
     private long startTime = 0;
     private MediaCodec dstVideoEncoder;
+    private final Object syncDstVideoEncoder = new Object();
     private RESFlvDataCollecter dataCollecter;
 
     VideoSenderThread(String name, MediaCodec encoder, RESFlvDataCollecter flvDataCollecter) {
@@ -26,6 +27,12 @@ public class VideoSenderThread extends Thread {
         startTime = 0;
         dstVideoEncoder = encoder;
         dataCollecter = flvDataCollecter;
+    }
+
+    public void updateMediaCodec(MediaCodec encoder) {
+        synchronized (syncDstVideoEncoder) {
+            dstVideoEncoder = encoder;
+        }
     }
 
     private boolean shouldQuit = false;
@@ -38,36 +45,46 @@ public class VideoSenderThread extends Thread {
     @Override
     public void run() {
         while (!shouldQuit) {
-            int eobIndex = dstVideoEncoder.dequeueOutputBuffer(eInfo, WAIT_TIME);
-            switch (eobIndex) {
-                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                    LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
-                    break;
-                case MediaCodec.INFO_TRY_AGAIN_LATER:
+            synchronized (syncDstVideoEncoder) {
+                int eobIndex = MediaCodec.INFO_TRY_AGAIN_LATER;
+                try {
+                    eobIndex = dstVideoEncoder.dequeueOutputBuffer(eInfo, WAIT_TIME);
+                } catch (Exception ignored) {
+                }
+                switch (eobIndex) {
+                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
+                        break;
+                    case MediaCodec.INFO_TRY_AGAIN_LATER:
 //                        LogTools.d("VideoSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
-                    break;
-                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" +
-                            dstVideoEncoder.getOutputFormat().toString());
-                    sendAVCDecoderConfigurationRecord(0, dstVideoEncoder.getOutputFormat());
-                    break;
-                default:
-                    LogTools.d("VideoSenderThread,MediaCode,eobIndex=" + eobIndex);
-                    if (startTime == 0) {
-                        startTime = eInfo.presentationTimeUs / 1000;
-                    }
-                    /**
-                     * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
-                     * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG
-                     */
-                    if (eInfo.flags != MediaCodec.BUFFER_FLAG_CODEC_CONFIG && eInfo.size != 0) {
-                        ByteBuffer realData = dstVideoEncoder.getOutputBuffers()[eobIndex];
-                        realData.position(eInfo.offset + 4);
-                        realData.limit(eInfo.offset + eInfo.size);
-                        sendRealData((eInfo.presentationTimeUs / 1000), realData);
-                    }
-                    dstVideoEncoder.releaseOutputBuffer(eobIndex, false);
-                    break;
+                        break;
+                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" +
+                                dstVideoEncoder.getOutputFormat().toString());
+                        sendAVCDecoderConfigurationRecord(0, dstVideoEncoder.getOutputFormat());
+                        break;
+                    default:
+                        LogTools.d("VideoSenderThread,MediaCode,eobIndex=" + eobIndex);
+                        if (startTime == 0) {
+                            startTime = eInfo.presentationTimeUs / 1000;
+                        }
+                        /**
+                         * we send sps pps already in INFO_OUTPUT_FORMAT_CHANGED
+                         * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG
+                         */
+                        if (eInfo.flags != MediaCodec.BUFFER_FLAG_CODEC_CONFIG && eInfo.size != 0) {
+                            ByteBuffer realData = dstVideoEncoder.getOutputBuffers()[eobIndex];
+                            realData.position(eInfo.offset + 4);
+                            realData.limit(eInfo.offset + eInfo.size);
+                            sendRealData((eInfo.presentationTimeUs / 1000) - startTime, realData);
+                        }
+                        dstVideoEncoder.releaseOutputBuffer(eobIndex, false);
+                        break;
+                }
+            }
+            try {
+                sleep(5);
+            } catch (InterruptedException ignored) {
             }
         }
         eInfo = null;

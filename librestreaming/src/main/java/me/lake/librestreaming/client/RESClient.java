@@ -7,6 +7,7 @@ import android.os.Build;
 
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
+import me.lake.librestreaming.core.listener.RESVideoChangeListener;
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.filter.softaudiofilter.BaseSoftAudioFilter;
 import me.lake.librestreaming.filter.softvideofilter.BaseSoftVideoFilter;
@@ -317,6 +318,14 @@ public class RESClient {
     }
 
     /**
+     * listener for video size change
+     * @param videoChangeListener
+     */
+    public void setVideoChangeListener(RESVideoChangeListener videoChangeListener) {
+        videoClient.setVideoChangeListener(videoChangeListener);
+    }
+
+    /**
      * get the param of video,audio,mediacodec
      *
      * @return info
@@ -371,6 +380,25 @@ public class RESClient {
      */
     public void reSetVideoFPS(int fps) {
         videoClient.reSetVideoFPS(fps);
+    }
+
+    /**
+     * only work with hard mode.
+     * reset video size on the fly.
+     * may restart camera.
+     * will restart mediacodec.
+     * will not interrupt streaming
+     * @param targetVideoSize
+     */
+    public void reSetVideoSize(Size targetVideoSize) {
+        if (targetVideoSize == null) {
+            return;
+        }
+        if (coreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            throw new IllegalArgumentException("soft mode doesn`t support reSetVideoSize");
+        }else {
+            videoClient.reSetVideoSize(targetVideoSize);
+        }
     }
 
     public String getVertion() {

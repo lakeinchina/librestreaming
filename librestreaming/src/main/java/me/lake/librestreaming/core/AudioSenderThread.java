@@ -64,7 +64,7 @@ public class AudioSenderThread extends Thread {
                         ByteBuffer realData = dstAudioEncoder.getOutputBuffers()[eobIndex];
                         realData.position(eInfo.offset);
                         realData.limit(eInfo.offset + eInfo.size);
-                        sendRealData((eInfo.presentationTimeUs / 1000), realData);
+                        sendRealData((eInfo.presentationTimeUs / 1000) - startTime, realData);
                     }
                     dstAudioEncoder.releaseOutputBuffer(eobIndex, false);
                     break;

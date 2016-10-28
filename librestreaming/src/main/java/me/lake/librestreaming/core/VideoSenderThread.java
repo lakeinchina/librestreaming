@@ -76,7 +76,7 @@ public class VideoSenderThread extends Thread {
                             ByteBuffer realData = dstVideoEncoder.getOutputBuffers()[eobIndex];
                             realData.position(eInfo.offset + 4);
                             realData.limit(eInfo.offset + eInfo.size);
-                            sendRealData((eInfo.presentationTimeUs / 1000), realData);
+                            sendRealData((eInfo.presentationTimeUs / 1000) - startTime, realData);
                         }
                         dstVideoEncoder.releaseOutputBuffer(eobIndex, false);
                         break;

@@ -10,6 +10,7 @@ This project uses Android lastest [MediaCodec API](https://developer.android.com
 - Support pixel rotation and flip
 - Support encoding paramaters like resolution, bitrate,fps etc
 - Fast front/rear camera swaping without interrupt rtmp streaming
+- Support draw android View into video
 
 ### Soft Filter Mode
 

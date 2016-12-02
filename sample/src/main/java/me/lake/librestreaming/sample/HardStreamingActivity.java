@@ -42,8 +42,10 @@ import me.lake.librestreaming.sample.hardfilter.SobelEdgeDetectionHardVideoFilte
 import me.lake.librestreaming.sample.hardfilter.TextHardFilter;
 import me.lake.librestreaming.sample.hardfilter.TimeStampHardFilter;
 import me.lake.librestreaming.sample.hardfilter.TowInputFilterHard;
+import me.lake.librestreaming.sample.hardfilter.ViewHardFilter;
 import me.lake.librestreaming.sample.hardfilter.WhiteningHardVideoFilter;
 import me.lake.librestreaming.sample.hardfilter.extra.GPUImageCompatibleFilter;
+import me.lake.librestreaming.sample.ui.FakeView;
 
 /**
  * Created by lake on 16-5-31.
@@ -61,6 +63,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         ArrayList<FilterItem> filterItems = new ArrayList<>();
         filterItems.add(new FilterItem("NoFilter", null));
         filterItems.add(new FilterItem("DoNothing", new OriginalHardVideoFilter(null, null)));
+        filterItems.add(new FilterItem("ViewRending", new ViewHardFilter(new FakeView(this))));
         filterItems.add(new FilterItem("FishEye", new FishEyeFilterHard()));
         filterItems.add(new FilterItem("SkinBlur", new SkinBlurHardVideoFilter(2)));
         filterItems.add(new FilterItem("Whitening", new WhiteningHardVideoFilter()));
@@ -97,10 +100,10 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         filterItems.add(new FilterItem("MoreText", moreText));
         TimeStampHardFilter timeStampHardFilter = new TimeStampHardFilter(null,Color.RED,30);
         timeStampHardFilter.setPostion(TextHardFilter.Gravity.BOTTOM|TextHardFilter.Gravity.RIGHT,30,30);
-        filterItems.add(new FilterItem("TimeStamp",timeStampHardFilter));
+        filterItems.add(new FilterItem("TimeStamp", timeStampHardFilter));
         TimeStampHardFilter timeStampHardFilter2 = new TimeStampHardFilter(null,Color.TRANSPARENT,30);
-        timeStampHardFilter2.setPostion(TextHardFilter.Gravity.BOTTOM|TextHardFilter.Gravity.RIGHT,30,30);
-        filterItems.add(new FilterItem("invertText",timeStampHardFilter2));
+        timeStampHardFilter2.setPostion(TextHardFilter.Gravity.BOTTOM | TextHardFilter.Gravity.RIGHT, 30, 30);
+        filterItems.add(new FilterItem("invertText", timeStampHardFilter2));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();

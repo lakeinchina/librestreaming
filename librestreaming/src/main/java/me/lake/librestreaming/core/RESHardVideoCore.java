@@ -306,6 +306,7 @@ public class RESHardVideoCore implements RESVideoCore {
         private VideoSenderThread videoSenderThread;
 
         boolean hasNewFrame = false;
+        public boolean dropNextFrame = false;
 
         public VideoGLHandler(Looper looper) {
             super(looper);
@@ -327,7 +328,12 @@ public class RESHardVideoCore implements RESVideoCore {
                                 while (frameNum != 0) {
                                     cameraTexture.updateTexImage();
                                     --frameNum;
-                                    hasNewFrame = true;
+                                    if (!dropNextFrame) {
+                                        hasNewFrame = true;
+                                    } else {
+                                        dropNextFrame = false;
+                                        hasNewFrame=false;
+                                    }
                                 }
                             } else {
                                 break;
@@ -344,8 +350,8 @@ public class RESHardVideoCore implements RESVideoCore {
                         if (isPreviewing || isStreaming) {
                             if (interval > 0) {
                                 videoGLHander.sendMessageDelayed(videoGLHander.obtainMessage(
-                                                VideoGLHandler.WHAT_DRAW,
-                                                SystemClock.uptimeMillis() + interval),
+                                        VideoGLHandler.WHAT_DRAW,
+                                        SystemClock.uptimeMillis() + interval),
                                         interval);
                             } else {
                                 videoGLHander.sendMessage(videoGLHander.obtainMessage(
@@ -448,7 +454,7 @@ public class RESHardVideoCore implements RESVideoCore {
                         videoSenderThread.updateMediaCodec(dstVideoEncoder);
                     }
                     synchronized (syncResVideoChangeListener) {
-                        if(resVideoChangeListener!=null) {
+                        if (resVideoChangeListener != null) {
                             CallbackDelivery.i().post(new RESVideoChangeListener.RESVideoChangeRunable(resVideoChangeListener,
                                     resCoreParameters.videoWidth,
                                     resCoreParameters.videoHeight));
@@ -748,7 +754,7 @@ public class RESHardVideoCore implements RESVideoCore {
             cameraTextureVerticesBuffer = GLHelper.getCameraTextureVerticesBuffer();
         }
 
-        public void updateCameraIndex(int cameraIndex) {
+        void updateCameraIndex(int cameraIndex) {
             synchronized (syncCameraTextureVerticesBuffer) {
                 currCamera = cameraIndex;
                 if (currCamera == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -760,21 +766,23 @@ public class RESHardVideoCore implements RESVideoCore {
             }
         }
 
-        public float getDrawFrameRate() {
+        float getDrawFrameRate() {
             return drawFrameRateMeter.getFps();
         }
 
 
-        public void updateCamTexture(SurfaceTexture surfaceTexture) {
+        void updateCamTexture(SurfaceTexture surfaceTexture) {
             synchronized (syncCameraTex) {
                 if (surfaceTexture != cameraTexture) {
                     cameraTexture = surfaceTexture;
                     frameNum = 0;
+                    dropNextFrame = true;
                 }
             }
         }
 
-        public void addFrameNum() {
+
+        void addFrameNum() {
             synchronized (syncFrameNum) {
                 ++frameNum;
                 this.removeMessages(WHAT_FRAME);
@@ -782,7 +790,7 @@ public class RESHardVideoCore implements RESVideoCore {
             }
         }
 
-        public void updatePreview(int w, int h) {
+        void updatePreview(int w, int h) {
             screenSize = new Size(w, h);
         }
     }

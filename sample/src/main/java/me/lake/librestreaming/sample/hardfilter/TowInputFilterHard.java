@@ -46,10 +46,10 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
             "   gl_FragColor = outputColor;\n" +
             "}";
     protected static float texture2Vertices[] = {
-            1.0f, 0.0f,
-            1.0f, 1.0f,
+            0.0f, 0.0f,
             0.0f, 1.0f,
-            0.0f, 0.0f};
+            1.0f, 1.0f,
+            1.0f, 0.0f};
     protected FloatBuffer textureImageCoordBuffer;
     protected int imageTexture;
     private Bitmap image;

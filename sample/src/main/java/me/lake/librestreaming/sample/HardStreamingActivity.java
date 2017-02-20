@@ -35,6 +35,7 @@ import me.lake.librestreaming.model.RESConfig;
 import me.lake.librestreaming.sample.hardfilter.ColorMixHardFilter;
 import me.lake.librestreaming.sample.hardfilter.DifferenceBlendFilterHard;
 import me.lake.librestreaming.sample.hardfilter.FishEyeFilterHard;
+import me.lake.librestreaming.sample.hardfilter.GaussianBlurHardFilter;
 import me.lake.librestreaming.sample.hardfilter.IconHardFilter;
 import me.lake.librestreaming.sample.hardfilter.SeaScapeFilter;
 import me.lake.librestreaming.sample.hardfilter.SkinBlurHardVideoFilter;
@@ -104,6 +105,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         TimeStampHardFilter timeStampHardFilter2 = new TimeStampHardFilter(null,Color.TRANSPARENT,30);
         timeStampHardFilter2.setPostion(TextHardFilter.Gravity.BOTTOM | TextHardFilter.Gravity.RIGHT, 30, 30);
         filterItems.add(new FilterItem("invertText", timeStampHardFilter2));
+        filterItems.add(new FilterItem("GaussianBlur",new GaussianBlurHardFilter(20)));
         filterItems.add(new FilterItem("gpuimage:Invert", new GPUImageCompatibleFilter<>(new GPUImageColorInvertFilter())));
         filterItems.add(new FilterItem("gpuimage:Pixelation", new GPUImageCompatibleFilter<>(new GPUImagePixelationFilter())));
         GPUImage3x3ConvolutionFilter tmp = new GPUImage3x3ConvolutionFilter();

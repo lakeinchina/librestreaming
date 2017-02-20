@@ -129,7 +129,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
                 }
             }
         };
-        mainHander.sendEmptyMessageDelayed(0, 3000);
+        mainHander.sendEmptyMessage(0);
 
         resClient.setSoftAudioFilter(new SetVolumeAudioFilter());
         sb_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

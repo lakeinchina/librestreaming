@@ -35,6 +35,15 @@ public class GLHelper {
             "    gl_Position= aPosition;\n" +
             "    vTextureCoord = aTextureCoord;\n" +
             "}";
+    private static final String VERTEXSHADER_CAMERA2D =
+            "attribute vec4 aPosition;\n" +
+            "attribute vec4 aTextureCoord;\n" +
+            "uniform mat4 uTextureMatrix;\n" +
+            "varying vec2 vTextureCoord;\n" +
+            "void main(){\n" +
+            "    gl_Position= aPosition;\n" +
+            "    vTextureCoord = (uTextureMatrix * aTextureCoord).xy;\n" +
+            "}";
     private static String FRAGMENTSHADER_CAMERA = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
@@ -297,7 +306,7 @@ public class GLHelper {
     }
 
     public static int createCamera2DProgram() {
-        return GLESTools.createProgram(VERTEXSHADER, FRAGMENTSHADER_CAMERA2D);
+        return GLESTools.createProgram(VERTEXSHADER_CAMERA2D, FRAGMENTSHADER_CAMERA2D);
     }
 
     public static int createCameraProgram() {

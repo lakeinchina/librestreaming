@@ -16,6 +16,7 @@ public class OffScreenGLWapper {
     public EGLContext eglContext;
 
     public int cam2dProgram;
+    public int cam2dTextureMatrix;
     public int cam2dTextureLoc;
     public int cam2dPostionLoc;
     public int cam2dTextureCoordLoc;

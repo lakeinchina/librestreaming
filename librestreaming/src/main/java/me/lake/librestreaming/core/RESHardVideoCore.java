@@ -762,7 +762,7 @@ public class RESHardVideoCore implements RESVideoCore {
             synchronized (syncCameraTextureVerticesBuffer) {
                 currCamera = cameraIndex;
                 if (currCamera == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    directionFlag = resCoreParameters.frontCameraDirectionMode;
+                    directionFlag = resCoreParameters.frontCameraDirectionMode ^ RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL;
                 } else {
                     directionFlag = resCoreParameters.backCameraDirectionMode;
                 }

@@ -82,25 +82,25 @@ public class GLHelper {
             1.0f, 0.0f,
             1.0f, 1.0f};
     private static float Cam2dTextureVertices[] = {
-            0.0f, 0.0f,
             0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f};
-    private static float Cam2dTextureVertices_90[] = {
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f};
-    private static float Cam2dTextureVertices_180[] = {
-            1.0f, 1.0f,
-            1.0f, 0.0f,
             0.0f, 0.0f,
-            0.0f, 1.0f};
-    private static float Cam2dTextureVertices_270[] = {
             1.0f, 0.0f,
-            0.0f, 0.0f,
-            0.0f, 1.0f,
             1.0f, 1.0f};
+    private static float Cam2dTextureVertices_90[] = {
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+            0.0f, 1.0f};
+    private static float Cam2dTextureVertices_180[] = {
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f};
+    private static float Cam2dTextureVertices_270[] = {
+            1.0f, 1.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            1.0f, 0.0f};
     private static float MediaCodecTextureVertices[] = {
             0.0f, 1.0f,
             0.0f, 0.0f,

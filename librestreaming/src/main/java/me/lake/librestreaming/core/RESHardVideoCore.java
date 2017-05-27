@@ -340,7 +340,7 @@ public class RESHardVideoCore implements RESVideoCore {
                             }
                         }
                     }
-                    drawSample2DFrameBuffer();
+                    drawSample2DFrameBuffer(cameraTexture);
                 }
                 break;
                 case WHAT_DRAW: {
@@ -467,7 +467,7 @@ public class RESHardVideoCore implements RESVideoCore {
         }
 
 
-        private void drawSample2DFrameBuffer() {
+        private void drawSample2DFrameBuffer(SurfaceTexture cameraTexture) {
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, sample2DFrameBuffer);
             GLES20.glUseProgram(offScreenGLWapper.cam2dProgram);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -477,6 +477,9 @@ public class RESHardVideoCore implements RESVideoCore {
                 GLHelper.enableVertex(offScreenGLWapper.cam2dPostionLoc, offScreenGLWapper.cam2dTextureCoordLoc,
                         shapeVerticesBuffer, camera2dTextureVerticesBuffer);
             }
+            float[] textureMatrix = new float[16];
+            cameraTexture.getTransformMatrix(textureMatrix);
+            GLES20.glUniformMatrix4fv(offScreenGLWapper.cam2dTextureMatrix, 1, false, textureMatrix, 0);
             GLES20.glViewport(0, 0, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
             doGLDraw();
             GLES20.glFinish();
@@ -640,6 +643,7 @@ public class RESHardVideoCore implements RESVideoCore {
                 offScreenGLWapper.cam2dTextureLoc = GLES20.glGetUniformLocation(offScreenGLWapper.cam2dProgram, "uTexture");
                 offScreenGLWapper.cam2dPostionLoc = GLES20.glGetAttribLocation(offScreenGLWapper.cam2dProgram, "aPosition");
                 offScreenGLWapper.cam2dTextureCoordLoc = GLES20.glGetAttribLocation(offScreenGLWapper.cam2dProgram, "aTextureCoord");
+                offScreenGLWapper.cam2dTextureMatrix = GLES20.glGetUniformLocation(offScreenGLWapper.cam2dProgram, "uTextureMatrix");
                 int[] fb = new int[1], fbt = new int[1];
                 GLHelper.createCamFrameBuff(fb, fbt, resCoreParameters.videoWidth, resCoreParameters.videoHeight);
                 sample2DFrameBuffer = fb[0];
@@ -758,7 +762,7 @@ public class RESHardVideoCore implements RESVideoCore {
             synchronized (syncCameraTextureVerticesBuffer) {
                 currCamera = cameraIndex;
                 if (currCamera == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    directionFlag = resCoreParameters.frontCameraDirectionMode;
+                    directionFlag = resCoreParameters.frontCameraDirectionMode ^ RESConfig.DirectionMode.FLAG_DIRECTION_FLIP_HORIZONTAL;
                 } else {
                     directionFlag = resCoreParameters.backCameraDirectionMode;
                 }

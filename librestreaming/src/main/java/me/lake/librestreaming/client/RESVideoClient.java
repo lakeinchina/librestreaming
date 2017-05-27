@@ -91,6 +91,7 @@ public class RESVideoClient {
     private Camera createCamera(int cameraId) {
         try {
             camera = Camera.open(cameraId);
+            camera.setDisplayOrientation(0);
         } catch (SecurityException e) {
             LogTools.trace("no permission", e);
             return null;

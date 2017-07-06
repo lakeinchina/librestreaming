@@ -37,6 +37,7 @@ public class RESCoreParameters {
     public int videoWidth;
     public int videoHeight;
     public int videoFPS;
+    public int videoGOP;
     public float cropRatio;
     public int previewColorFormat;
     public int previewBufferSize;
@@ -73,6 +74,7 @@ public class RESCoreParameters {
         videoWidth = -1;
         videoHeight = -1;
         videoFPS=-1;
+        videoGOP=1;
         previewColorFormat = -1;
         mediacodecAVCColorFormat = -1;
         mediacdoecAVCBitRate = -1;

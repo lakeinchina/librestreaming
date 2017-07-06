@@ -36,6 +36,7 @@ public class RESConfig {
     private int frontCameraDirectionMode;
     private int backCameraDirectionMode;
     private int videoFPS;
+    private int videoGOP;
     private boolean printDetailMsg;
 
     private RESConfig() {
@@ -47,6 +48,7 @@ public class RESConfig {
         res.setRenderingMode(RenderingMode.NativeWindow);
         res.setTargetVideoSize(new Size(1280, 720));
         res.setVideoFPS(15);
+        res.setVideoGOP(1);
         res.setVideoBufferQueueNum(5);
         res.setBitRate(2000000);
         res.setPrintDetailMsg(false);
@@ -136,6 +138,14 @@ public class RESConfig {
 
     public void setVideoFPS(int videoFPS) {
         this.videoFPS = videoFPS;
+    }
+
+    public int getVideoGOP(){
+        return videoGOP;
+    }
+
+    public void setVideoGOP(int videoGOP){
+        this.videoGOP = videoGOP;
     }
 
     public int getVideoBufferQueueNum() {

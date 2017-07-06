@@ -1,2 +1,2 @@
 include ':sample', ':librestreaming'
-rootProject.name = 'libREStreaming'
+rootProject.name = 'librestreaming'

@@ -81,11 +81,12 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         txv_preview.setKeepScreenOn(true);
         txv_preview.setSurfaceTextureListener(this);
         resClient = new RESClient();
-         resConfig = RESConfig.obtain();
+        resConfig = RESConfig.obtain();
         resConfig.setFilterMode(filtermode);
         resConfig.setTargetVideoSize(new Size(720, 480));
         resConfig.setBitRate(750 * 1024);
         resConfig.setVideoFPS(20);
+        resConfig.setVideoGOP(1);
         resConfig.setRenderingMode(RESConfig.RenderingMode.OpenGLES);
         resConfig.setDefaultCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         int frontDirection, backDirection;

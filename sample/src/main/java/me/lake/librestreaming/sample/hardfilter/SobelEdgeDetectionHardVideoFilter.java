@@ -6,7 +6,7 @@ package me.lake.librestreaming.sample.hardfilter;
 public class SobelEdgeDetectionHardVideoFilter extends Base3x3SamplingHardVideoFilter {
     public static final String FRAGMENTSHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
+            "precision highp float;\n" +
             "\n" +
             "varying vec2 vCamTextureCoord;\n" +
             "varying vec2 leftTextureCoordinate;\n" +

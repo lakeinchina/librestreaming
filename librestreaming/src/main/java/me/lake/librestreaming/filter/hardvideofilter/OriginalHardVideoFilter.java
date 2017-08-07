@@ -24,8 +24,8 @@ public class OriginalHardVideoFilter extends BaseHardVideoFilter {
             "    vCamTextureCoord = aCamTextureCoord;\n" +
             "}";
     protected String fragmentshader_filter = "" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
             "uniform sampler2D uCamTexture;\n" +
             "void main(){\n" +
             "    vec4  color = texture2D(uCamTexture, vCamTextureCoord);\n" +

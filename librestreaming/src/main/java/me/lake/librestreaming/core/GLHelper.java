@@ -46,8 +46,8 @@ public class GLHelper {
             "}";
     private static String FRAGMENTSHADER_CAMERA = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vTextureCoord;\n" +
             "uniform sampler2D uTexture;\n" +
             "void main(){\n" +
             "    vec4  color = texture2D(uTexture, vTextureCoord);\n" +
@@ -55,16 +55,16 @@ public class GLHelper {
             "}";
     private static String FRAGMENTSHADER_CAMERA2D = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vTextureCoord;\n" +
             "uniform samplerExternalOES uTexture;\n" +
             "void main(){\n" +
             "    vec4  color = texture2D(uTexture, vTextureCoord);\n" +
             "    gl_FragColor = color;\n" +
             "}";
     private static String FRAGMENTSHADER_2D = "" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vTextureCoord;\n" +
             "uniform sampler2D uTexture;\n" +
             "void main(){\n" +
             "    vec4  color = texture2D(uTexture, vTextureCoord);\n" +

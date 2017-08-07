@@ -33,9 +33,9 @@ public class TowInputFilterHard extends BaseHardVideoFilter {
             "   vImageTextureCoord = aImageTextureCoord;\n" +
             "}";
     protected String fragmentshader_filter = "" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
-            "varying mediump vec2 vImageTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
+            "varying highp vec2 vImageTextureCoord;\n" +
             "uniform sampler2D uCamTexture;\n" +
             "uniform sampler2D uImageTexture;\n" +
             "void main(){\n" +

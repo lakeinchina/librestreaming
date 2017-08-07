@@ -8,13 +8,13 @@ import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
 public class FishEyeFilterHard extends OriginalHardVideoFilter {
     private static String FRAGMENTSHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
+            "precision highp float;\n" +
             "uniform sampler2D uCamTexture;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
-            "const mediump float PI = 3.1415926535;\n" +
-            "const mediump float aperture = 180.0;\n" +
-            "const mediump float apertureHalf = 0.5 * aperture * (PI / 180.0);\n" +
-            "const mediump float maxFactor = sin(apertureHalf);\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
+            "const highp float PI = 3.1415926535;\n" +
+            "const highp float aperture = 180.0;\n" +
+            "const highp float apertureHalf = 0.5 * aperture * (PI / 180.0);\n" +
+            "const highp float maxFactor = sin(apertureHalf);\n" +
             "void main(){\n" +
             "    vec2 pos = 2.0 * vCamTextureCoord.st - 1.0;\n" +
             "    float l = length(pos);\n" +

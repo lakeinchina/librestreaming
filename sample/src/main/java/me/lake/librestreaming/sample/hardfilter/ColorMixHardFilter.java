@@ -10,8 +10,8 @@ import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
  */
 public class ColorMixHardFilter extends OriginalHardVideoFilter {
     private static String fragmentshader = "" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
             "uniform sampler2D uCamTexture;\n" +
             "uniform vec4 mixcolor;" +
             "void main(){\n" +

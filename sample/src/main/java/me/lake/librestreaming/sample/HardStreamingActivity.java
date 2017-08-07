@@ -253,7 +253,7 @@ public class HardStreamingActivity extends BaseStreamingActivity {
         return (end - start) * percentage / 100 + start;
     }
     public static final String SKETCH_FRAGMENT_SHADER = "" +
-            "precision mediump float;\n" +
+            "precision highp float;\n" +
             "\n" +
             "varying vec2 textureCoordinate;\n" +
             "varying vec2 leftTextureCoordinate;\n" +

@@ -111,8 +111,8 @@ public class ViewHardFilter extends BaseHardVideoFilter {
             "}";
     protected String viewFragmentshader_filter = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vViewTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vViewTextureCoord;\n" +
             "uniform sampler2D uViewCamTexture;\n" +
             "uniform samplerExternalOES uViewTexture;\n" +
             "void main(){\n" +

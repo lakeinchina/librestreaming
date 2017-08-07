@@ -41,8 +41,8 @@ public class WhiteningHardVideoFilter extends BaseHardVideoFilter {
             "   vCamTextureCoord = aCamTextureCoord;\n" +
             "}";
     protected static String FRAGMENTSHADER = "" +
-            "precision mediump float;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
+            "precision highp float;\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
             "uniform sampler2D uCamTexture;\n" +
             "uniform sampler2D uColorMapTexture;\n" +
             "void main(){\n" +

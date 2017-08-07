@@ -10,14 +10,14 @@ import me.lake.librestreaming.filter.hardvideofilter.OriginalHardVideoFilter;
  */
 public class SkinBlurHardVideoFilter extends OriginalHardVideoFilter {
     private static String FRAGMENTSHADER = "" +
-            "precision mediump float;\n" +
+            "precision highp float;\n" +
             "uniform sampler2D uCamTexture;\n" +
-            "varying mediump vec2 vCamTextureCoord;\n" +
+            "varying highp vec2 vCamTextureCoord;\n" +
             "const float maxdelta = 0.08;\n" +
-            "uniform mediump float xStep;\n" +
-            "uniform mediump float yStep;\n" +
-            "const mediump mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);\n" +
-            "const mediump mat3 gaussianMap = mat3(0.142,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);\n" +
+            "uniform highp float xStep;\n" +
+            "uniform highp float yStep;\n" +
+            "const highp mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);\n" +
+            "const highp mat3 gaussianMap = mat3(0.142,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);\n" +
             "void main(){\n" +
             "    vec4 color = texture2D(uCamTexture,vCamTextureCoord);\n" +
             "    vec3 yuv = rgb2yuv*color.rgb;\n" +

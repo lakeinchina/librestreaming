@@ -1,11 +1,11 @@
-precision mediump float;
+precision highp float;
 uniform sampler2D uCamTexture;
-varying mediump vec2 vCamTextureCoord;
+varying highp vec2 vCamTextureCoord;
 const float maxdelta = 0.08;
-uniform mediump float xStep;
-uniform mediump float yStep;
-const mediump mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);
-const mediump mat3 gaussianMap = mat3(0.142,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);
+uniform highp float xStep;
+uniform highp float yStep;
+const highp mat3 rgb2yuv = mat3(0.299,-0.147,0.615,0.587,-0.289,-0.515,0.114,0.436,-0.1);
+const highp mat3 gaussianMap = mat3(0.142,0.131,0.104,0.131,0.122,0.096,0.104,0.096,0.075);
 void main(){
     vec4 color = texture2D(uCamTexture,vCamTextureCoord);
     vec3 yuv = rgb2yuv*color.rgb;

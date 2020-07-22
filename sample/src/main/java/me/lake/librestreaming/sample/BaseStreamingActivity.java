@@ -196,6 +196,7 @@ public class BaseStreamingActivity extends AppCompatActivity implements RESConne
         }
         if (resClient != null) {
             resClient.destroy();
+            resClient=null;
         }
         super.onDestroy();
     }

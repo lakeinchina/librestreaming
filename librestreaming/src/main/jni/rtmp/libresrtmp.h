@@ -35,7 +35,7 @@ extern "C" {
  * Signature: ()I
  */
  JNIEXPORT jint JNICALL Java_me_lake_librestreaming_rtmp_RtmpClient_close
- (JNIEnv * env,jlong rtmp, jobject thiz);
+ (JNIEnv * env, jobject thiz, jlong rtmp);
 
 
 

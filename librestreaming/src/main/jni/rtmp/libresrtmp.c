@@ -39,7 +39,6 @@
  	ret = RTMP_ConnectStream(rtmp, 0);
 
  	if (!ret) {
- 		ret = RTMP_ConnectStream(rtmp, 0);
  		RTMP_Close(rtmp);
  		RTMP_Free(rtmp);
  		rtmp=NULL;

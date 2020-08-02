@@ -1,10 +1,9 @@
 package me.lake.librestreaming.sample.ui;
 
 import android.content.Context;
-import android.graphics.Rect;
-import android.widget.TextView;
+import android.support.v7.widget.AppCompatTextView;
 
-public class AlwaysMarqueeTextView extends TextView {
+public class AlwaysMarqueeTextView extends AppCompatTextView {
   
     // com.duopin.app.AlwaysMaguequeScrollView  
     public AlwaysMarqueeTextView(Context context) {

@@ -12,8 +12,7 @@ android {
         versionCode 1
         versionName "0.0.1"
 
-        renderscriptTargetApi 18
-        renderscriptSupportModeEnabled true
+        renderscriptTargetApi 20
 
         ndk{
             abiFilters "armeabi-v7a","arm64-v8a"
@@ -38,10 +37,10 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:design:23+'
-    compile 'com.android.support:appcompat-v7:23+'
-    compile 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.4.1'
-    compile project(':librestreaming')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.support:design:23+'
+    implementation 'com.android.support:appcompat-v7:23+'
+    implementation 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.4.1'
+    implementation project(':librestreaming')
 }
